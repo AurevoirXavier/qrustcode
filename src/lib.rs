@@ -5,5 +5,8 @@ mod tests {
     use super::*;
 
     # [test]
-    fn a() {}
+    fn encoder_test() {
+        use self::encoder::Encoder;
+        let encoder = Encoder::new();
+    }
 }
