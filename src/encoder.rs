@@ -1,9 +1,10 @@
 pub struct Encoder {
     micro_mode: bool,
 
-    // modes -> (Version, indicator)
+    // modes' index -> mode
+    // modes        -> indicator
     //
-    // Mode:
+    // mode:
     //      Numeric      -> 0
     //      Alphanumeric -> 1
     //      Byte         -> 2
@@ -11,9 +12,11 @@ pub struct Encoder {
     //      252 ~ 255 not implemented yet
     modes: [String; 4],
 
-    // indicators -> (Version, (Mode, Indicator_size))
+    // indicators_size's index -> version
+    // indicators              -> [indicators' size in different mode]
+    // indicators[mode]        -> indicator's size
     //
-    // Version:
+    // version:
     //      micro_mode:
     //          M1 ~ M4 -> 0 ~ 3
     //      normal:
@@ -21,7 +24,7 @@ pub struct Encoder {
     //          10 ~ 26 -> 1
     //          27 ~ 40 -> 2
     //
-    // Mode: same as above
+    // mode: same as above
     indicators_size: [[u8; 4]; 3],
 }
 
