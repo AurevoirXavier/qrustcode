@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub struct Encoder {
     micro_mode: bool,
 
@@ -10,20 +8,21 @@ pub struct Encoder {
     //      Alphanumeric -> 1
     //      Byte         -> 2
     //      Kanji        -> 3
-    //      Terminator   -> 4
     //      252 ~ 255 not implemented yet
-    modes: HashMap<u8, String>,
+    modes: [String; 4],
 
     // indicators -> (Version, (Mode, Indicator_size))
     //
     // Version:
-    //      M1 ~ M4 -> 1 ~ 4
-    //      1 ~ 9   -> 5
-    //      10 ~ 26 -> 6
-    //      27 ~ 40 -> 7
+    //      micro_mode:
+    //          M1 ~ M4 -> 0 ~ 3
+    //      normal:
+    //          1 ~ 9   -> 0
+    //          10 ~ 26 -> 1
+    //          27 ~ 40 -> 2
     //
     // Mode: same as above
-    indicators_size: HashMap<u8, [u8; 4]>,
+    indicators_size: [[u8; 4]; 3],
 }
 
 impl Encoder {
@@ -45,57 +44,42 @@ impl Encoder {
             unreachable!() // TODO
         } else {
             self.modes = [
-                (0u8, "0001"), (1, "0010"), (2, "0100"),
-                (3, "1000"), (4, "0000"), (255, "0111"),
-                (254, "0011"), (253, "1101"), (252, "0101 1001")
-            ].iter()
-                .map(|&(mode, indicator)| (mode, indicator.to_string()))
-                .collect();
-
+                String::from("0001"),
+                String::from("0010"),
+                String::from("0100"),
+                String::from("1000")
+            ];
             self.indicators_size = [
-                (5, [10, 9, 8, 8]),
-                (6, [12, 1, 16, 10]),
-                (7, [14, 13, 16, 12])
-            ].iter()
-                .map(|&x| x)
-                .collect();
+                [10, 9, 8, 8],
+                [12, 1, 16, 10],
+                [14, 13, 16, 12]
+            ]
         }
     }
 
     pub fn encode(&self, mode: &str, version: &str, correction_level: &str, text: &str) {
         let indicator_size = {
             let mode = match mode {
-                "Numeric" => 1,
-                "Alphanumeric" => 2,
-                "Byte" => 3,
-                "Kanji" => 4,
-                "Terminator" => 0,
-                "ECI" => 255,
-                "Structured" => 254,
-                "Chinese" => 253,
-                "FNC1" => 252,
-                _ => panic!()
+                "Numeric" => 0,
+                "Alphanumeric" => 1,
+                "Byte" => 2,
+                "Kanji" => 3,
+                _ => unreachable!() // TODO
             };
-            let indicators_size = self.indicators_size.get(&{
-                if let Ok(version) = version.parse::<u8>() {
-                    match version {
-                        1...9 => 5,
-                        10...26 => 6,
-                        27...40 => 7,
-                        _ => panic!()
-                    }
+            let indicators_size = self.indicators_size[{
+                if self.micro_mode {
+                    unreachable!() // TODO
                 } else {
-                    match version {
-                        "M1" => 1,
-                        "M2" => 2,
-                        "M3" => 3,
-                        "M4" => 4,
+                    match version.parse::<u8>().unwrap() {
+                        1...9 => 0,
+                        10...26 => 1,
+                        27...40 => 2,
                         _ => panic!()
                     }
                 }
-            }).unwrap();
+            }];
 
-            indicators_size[mode - 1]
+            indicators_size[mode]
         };
     }
 }
