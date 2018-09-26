@@ -7,6 +7,6 @@ mod tests {
     # [test]
     fn encoder_test() {
         use self::encoder::Encoder;
-        let encoder = Encoder::new();
+        let mut encoder = Encoder::new();
     }
 }
