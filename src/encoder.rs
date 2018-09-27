@@ -9,8 +9,9 @@ pub struct Encoder {
     //      Alphanumeric -> 1
     //      Byte         -> 2
     //      Kanji        -> 3
+    //      Chinese      -> 4
     //      252 ~ 255 not implemented yet
-    modes: [String; 4],
+//    encoding_modes: [[bool; 4]; 5],
 
     // indicators_bit's index -> version
     // indicators              -> [indicators' bits in different mode]
@@ -32,7 +33,7 @@ impl Encoder {
     pub fn new() -> Encoder {
         let mut encoder = Encoder {
             micro_mode: Default::default(),
-            modes: Default::default(),
+//            encoding_modes: Default::default(),
             indicators_bits: Default::default(),
         };
         encoder.set_micro_mode(false);
@@ -46,12 +47,13 @@ impl Encoder {
         if micro_mode {
             unreachable!() // TODO
         } else {
-            self.modes = [
-                String::from("0001"),
-                String::from("0010"),
-                String::from("0100"),
-                String::from("1000")
-            ];
+//            self.encoding_modes = [
+//                [false, false, false, true],
+//                [false, false, true, false],
+//                [false, true, false, false],
+//                [true, false, false, false],
+//                [true, true, false, true]
+//            ];
             self.indicators_bits = [
                 [10, 9, 8, 8],
                 [12, 1, 16, 10],
@@ -80,14 +82,18 @@ impl Encoder {
     }
 
     fn numeric_encode(&self, bits: usize, text: &str) -> Vec<bool> {
+        let mut encode = if self.micro_mode {
+            unreachable!() // TODO
+        } else { vec![vec![false, false, false, true]] };
         let len = text.len();
-        let mut encode = vec![];
+
+        encode.push(Encoder::binary(bits, len));
 
         for i in (0..).step_by(3) {
             match len - i {
                 bits @ 1...2 => {
                     encode.push(Encoder::binary(bits * 3 + 1, text[i..len].parse().unwrap()));
-
+                    println!("{:?}", encode.concat());
                     return encode.concat();
                 }
                 _ => encode.push(Encoder::binary(bits, text[i..i + 3].parse().unwrap()))
@@ -104,6 +110,7 @@ impl Encoder {
                 "Alphanumeric" => 1,
                 "Byte" => 2,
                 "Kanji" => 3,
+                "Chinese" => 4,
                 _ => unreachable!() // TODO
             };
             let indicators_bits = self.indicators_bits[{
@@ -124,6 +131,7 @@ impl Encoder {
 
         match mode {
             "Numeric" => { self.numeric_encode(indicator_bits, text); }
+            "Alphanumeric" => { self.alphanumeric_encode(indicator_bits, text); }
             _ => unreachable!() // TODO
         }
     }

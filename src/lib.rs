@@ -14,7 +14,7 @@ mod tests {
         let encoder = Encoder::new();
 
         b.iter(|| {
-            (0..10000).fold((), |_, _|
+            (0..1).fold((), |_, _|
                 encoder.encode("Numeric", "1", "H", "01234567")
             )
         });
