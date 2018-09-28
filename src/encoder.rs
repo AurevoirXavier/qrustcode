@@ -62,7 +62,7 @@ impl Encoder {
 
             self.indicators_bits = [
                 [10, 9, 8, 8],
-                [12, 1, 16, 10],
+                [12, 11, 16, 10],
                 [14, 13, 16, 12]
             ];
 
@@ -103,39 +103,56 @@ impl Encoder {
 
     fn numeric_encode(&self, bits: usize, text: &str) -> Vec<bool> {
         let len = text.len();
+        let edge = len / 3 * 3;
         let mut encode = if self.micro_mode {
             unreachable!() // TODO
         } else { vec![vec![false, false, false, true]] };
 
         encode.push(Encoder::binary(bits, len));
 
-        for i in (0..).step_by(3) {
-            match len - i {
-                bits @ 1...2 => {
-                    encode.push(Encoder::binary(bits * 3 + 1, text[i..len].parse().unwrap()));
-                    println!("{:?}", encode.concat());
-                    return encode.concat();
-                }
-                _ => encode.push(Encoder::binary(bits, text[i..i + 3].parse().unwrap()))
-            }
+        for i in (0..edge).step_by(3) {
+            encode.push(Encoder::binary(bits, text[i..i + 3].parse().unwrap()));
         }
 
-        unreachable!()
+        match len - edge {
+            bits @ 1...2 => encode.push(Encoder::binary(1 + 3 * bits, text[edge..len].parse().unwrap())),
+            _ => ()
+        }
+
+//        println!("{:?}", encode.concat());
+        encode.concat()
     }
 
-    fn alphanumeric_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
+    fn alphanumeric_encode(&self, bits: usize, text: &str) -> Vec<bool> {
+        let len = text.len();
+        let text: Vec<_> = text.chars().collect();
+        let mut encode = if self.micro_mode {
+            unreachable!() // TODO
+        } else { vec![vec![false, false, true, false]] };
+
+        encode.push(Encoder::binary(bits, len));
+
+        for i in (0..len >> 1 << 1).step_by(2) {
+            encode.push(Encoder::binary(
+                11,
+                45 * (*self.alphanumeric_table.get(&text[i]).unwrap()) + *self.alphanumeric_table.get(&text[i + 1]).unwrap()));
+        }
+
+        if len & 1 == 1 { encode.push(Encoder::binary(6, *self.alphanumeric_table.get(&text[len - 1]).unwrap())); }
+
+        println!("{:?}", encode.concat());
+        encode.concat()
+    }
+
+    fn byte_encode(&self, bits: usize, text: &str) -> Vec<bool> {
         vec![]
     }
 
-    fn byte_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
+    fn kanji_encode(&self, bits: usize, text: &str) -> Vec<bool> {
         vec![]
     }
 
-    fn kanji_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
-        vec![]
-    }
-
-    fn chinese_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
+    fn chinese_encode(&self, bits: usize, text: &str) -> Vec<bool> {
         vec![]
     }
 

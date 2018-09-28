@@ -13,9 +13,17 @@ mod tests {
         use self::encoder::Encoder;
         let encoder = Encoder::new();
 
+        // Numeric
         b.iter(|| {
             (0..1).fold((), |_, _|
                 encoder.encode("Numeric", "1", "H", "01234567")
+            )
+        });
+
+        // Alphanumeric
+        b.iter(|| {
+            (0..1).fold((), |_, _|
+                encoder.encode("Alphanumeric", "1", "H", "AE-86")
             )
         });
     }
