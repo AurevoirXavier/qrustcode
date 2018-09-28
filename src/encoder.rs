@@ -103,36 +103,31 @@ impl Encoder {
         unreachable!()
     }
 
+    fn alphanumeric_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
+        vec![]
+    }
+
     pub fn encode(&self, mode: &str, version: &str, correction_level: &str, text: &str) {
-        let indicator_bits = {
-            let mode = match mode {
-                "Numeric" => 0,
-                "Alphanumeric" => 1,
-                "Byte" => 2,
-                "Kanji" => 3,
-                "Chinese" => 4,
-                _ => unreachable!() // TODO
-            };
-            let indicators_bits = self.indicators_bits[{
-                if self.micro_mode {
-                    unreachable!() // TODO
-                } else {
-                    match version.parse::<usize>().unwrap() {
-                        1...9 => 0,
-                        10...26 => 1,
-                        27...40 => 2,
-                        _ => panic!()
-                    }
+        let indicators_bits = self.indicators_bits[{
+            if self.micro_mode {
+                unreachable!() // TODO
+            } else {
+                match version.parse::<usize>().unwrap() {
+                    1...9 => 0,
+                    10...26 => 1,
+                    27...40 => 2,
+                    _ => panic!()
                 }
-            }];
+            }
+        }];
 
-            indicators_bits[mode]
-        };
-
-        match mode {
-            "Numeric" => { self.numeric_encode(indicator_bits, text); }
-            "Alphanumeric" => { self.alphanumeric_encode(indicator_bits, text); }
+        let mode = match mode {
+            "Numeric" => self.numeric_encode(indicators_bits[0], text),
+            "Alphanumeric" => self.alphanumeric_encode(indicators_bits[1], text),
+            "Byte" => 2,
+            "Kanji" => 3,
+            "Chinese" => 4,
             _ => unreachable!() // TODO
-        }
+        };
     }
 }
