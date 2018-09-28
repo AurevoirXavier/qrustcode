@@ -3,20 +3,20 @@ use std::collections::HashMap;
 enum Indicators {
     Empty,
     // TODO
-    MicroMode([[usize; 4]; 3]),
+    Micro([[usize; 4]; 3]),
     Normal([[usize; 4]; 3]),
 }
 
 enum Codewords {
     Empty,
     // TODO
-    MicroMode([(usize, [usize; 4]); 40]),
+    Micro([(usize, [usize; 4]); 40]),
     Normal([(usize, [usize; 4]); 41]),
 }
 
 pub struct Encoder {
     // Switch for if using Micro QR Code
-    micro_mode: bool,
+    micro: bool,
 
     // modes' index -> mode
     // modes        -> indicator
@@ -39,7 +39,7 @@ pub struct Encoder {
     //      micro_mode:
     //          M1 ~ M4 -> 0 ~ 3
     //      normal:
-    //          1  ~ 9 -> 0
+    //          1  ~ 9  -> 0
     //          10 ~ 26 -> 1
     //          27 ~ 40 -> 2
     //
@@ -69,7 +69,7 @@ pub struct Encoder {
 impl Encoder {
     pub fn new() -> Encoder {
         let mut encoder = Encoder {
-            micro_mode: false,
+            micro: false,
             indicators: Indicators::Empty,
             alphanumeric_table: HashMap::new(),
             codewords: Codewords::Empty,
@@ -80,7 +80,7 @@ impl Encoder {
     }
 
     pub fn set_micro_mode(&mut self, micro_mode: bool) {
-        self.micro_mode = micro_mode;
+        self.micro = micro_mode;
 
         if micro_mode {
             unreachable!() // TODO
@@ -143,7 +143,7 @@ impl Encoder {
     fn numeric_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
         let len = text.len();
         let edge = len / 3 * 3;
-        let mut encode = if self.micro_mode {
+        let mut encode = if self.micro {
             unreachable!() // TODO
         } else { vec![vec![false, false, false, true]] };
 
@@ -165,7 +165,7 @@ impl Encoder {
     fn alphanumeric_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
         let len = text.len();
         let text: Vec<_> = text.chars().collect();
-        let mut encode = if self.micro_mode {
+        let mut encode = if self.micro {
             unreachable!() // TODO
         } else { vec![vec![false, false, true, false]] };
 
@@ -179,6 +179,7 @@ impl Encoder {
 
         if len & 1 == 1 { encode.push(Encoder::binary(6, *self.alphanumeric_table.get(&text[len - 1]).unwrap())); }
 
+//        println!("{:?}", encode.concat());
         encode.concat()
     }
 
@@ -203,7 +204,7 @@ impl Encoder {
                 27...40 => 2,
                 _ => panic!()
             }],
-            Indicators::MicroMode(indicators) => unreachable!(), // TODO
+            Indicators::Micro(indicators) => unreachable!(), // TODO
             _ => unreachable!()
         };
 
@@ -216,19 +217,21 @@ impl Encoder {
             _ => unreachable!() // TODO
         };
 
-        let terminator = if self.micro_mode {
-            unreachable!() // TODO
-        } else { 4 };
-
-        for _ in 0..terminator + encode.len() % 8 { encode.push(false); }
-
         {
             let padding = (match self.codewords {
-                Codewords::Normal(codewords) => codewords[version].0 * 4,
-                Codewords::MicroMode(codewords) => unreachable!(), // TODO
+                Codewords::Normal(codewords) => {
+                    // normal mode terminator
+                    for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(false); }
+
+                    codewords[version].0 * 4
+                }
+                Codewords::Micro(codewords) => unreachable!(), // TODO
                 _ => unreachable!()
             } - encode.len()) / 8;
-            let mut padding_bytes = [[true, true, true, false, true, true, false, false], [false, false, false, true, false, false, false, true]].iter().cycle();
+            let mut padding_bytes = [
+                [true, true, true, false, true, true, false, false],
+                [false, false, false, true, false, false, false, true]
+            ].iter().cycle();
 
             for _ in 0..padding { encode.extend_from_slice(padding_bytes.next().unwrap()); }
         }
