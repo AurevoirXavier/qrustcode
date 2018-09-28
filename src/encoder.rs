@@ -179,7 +179,6 @@ impl Encoder {
 
         if len & 1 == 1 { encode.push(Encoder::binary(6, *self.alphanumeric_table.get(&text[len - 1]).unwrap())); }
 
-        println!("{:?}", encode.concat());
         encode.concat()
     }
 
@@ -222,5 +221,18 @@ impl Encoder {
         } else { 4 };
 
         for _ in 0..terminator + encode.len() % 8 { encode.push(false); }
+
+        {
+            let padding = (match self.codewords {
+                Codewords::Normal(codewords) => codewords[version].0 * 4,
+                Codewords::MicroMode(codewords) => unreachable!(), // TODO
+                _ => unreachable!()
+            } - encode.len()) / 8;
+            let mut padding_bytes = [[true, true, true, false, true, true, false, false], [false, false, false, true, false, false, false, true]].iter().cycle();
+
+            for _ in 0..padding { encode.extend_from_slice(padding_bytes.next().unwrap()); }
+        }
+
+        println!("{:?}", encode);
     }
 }
