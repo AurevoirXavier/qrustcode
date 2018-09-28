@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub struct Encoder {
     micro_mode: bool,
 
@@ -11,7 +13,7 @@ pub struct Encoder {
     //      Kanji        -> 3
     //      Chinese      -> 4
     //      252 ~ 255 not implemented yet
-//    encoding_modes: [[bool; 4]; 5],
+    // encoding_modes: [[bool; 4]; 5],
 
     // indicators_bit's index -> version
     // indicators              -> [indicators' bits in different mode]
@@ -27,14 +29,17 @@ pub struct Encoder {
     //
     // mode: same as above
     indicators_bits: [[usize; 4]; 3],
+
+    alphanumeric_table: HashMap<char, usize>,
 }
 
 impl Encoder {
     pub fn new() -> Encoder {
         let mut encoder = Encoder {
             micro_mode: Default::default(),
-//            encoding_modes: Default::default(),
+            // encoding_modes: Default::default(),
             indicators_bits: Default::default(),
+            alphanumeric_table: Default::default(),
         };
         encoder.set_micro_mode(false);
 
@@ -47,18 +52,33 @@ impl Encoder {
         if micro_mode {
             unreachable!() // TODO
         } else {
-//            self.encoding_modes = [
-//                [false, false, false, true],
-//                [false, false, true, false],
-//                [false, true, false, false],
-//                [true, false, false, false],
-//                [true, true, false, true]
-//            ];
+            // self.encoding_modes = [
+            //     [false, false, false, true],
+            //     [false, false, true, false],
+            //     [false, true, false, false],
+            //     [true, false, false, false],
+            //     [true, true, false, true]
+            // ];
+
             self.indicators_bits = [
                 [10, 9, 8, 8],
                 [12, 1, 16, 10],
                 [14, 13, 16, 12]
-            ]
+            ];
+
+            self.alphanumeric_table = [
+                ('0', 0), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('5', 5),
+                ('6', 6), ('7', 7), ('8', 8), ('9', 9),
+                ('A', 10), ('B', 11), ('C', 12), ('D', 13), ('E', 14), ('F', 15),
+                ('G', 16), ('H', 17), ('I', 18), ('J', 19), ('K', 20), ('L', 21),
+                ('M', 22), ('N', 23), ('O', 24), ('P', 25), ('Q', 26), ('R', 27),
+                ('S', 28), ('T', 29), ('U', 30), ('V', 31), ('W', 32), ('X', 33),
+                ('Y', 34), ('Z', 35),
+                (' ', 36), ('$', 37), ('%', 38), ('*', 39), ('+', 40), ('-', 41),
+                ('.', 42), ('/', 43), (':', 44)
+            ].iter()
+                .map(|&t| t)
+                .collect()
         }
     }
 
@@ -82,10 +102,10 @@ impl Encoder {
     }
 
     fn numeric_encode(&self, bits: usize, text: &str) -> Vec<bool> {
+        let len = text.len();
         let mut encode = if self.micro_mode {
             unreachable!() // TODO
         } else { vec![vec![false, false, false, true]] };
-        let len = text.len();
 
         encode.push(Encoder::binary(bits, len));
 
@@ -107,6 +127,18 @@ impl Encoder {
         vec![]
     }
 
+    fn byte_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
+        vec![]
+    }
+
+    fn kanji_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
+        vec![]
+    }
+
+    fn chinese_encode(&self, indicator_bits: usize, text: &str) -> Vec<bool> {
+        vec![]
+    }
+
     pub fn encode(&self, mode: &str, version: &str, correction_level: &str, text: &str) {
         let indicators_bits = self.indicators_bits[{
             if self.micro_mode {
@@ -124,9 +156,9 @@ impl Encoder {
         let mode = match mode {
             "Numeric" => self.numeric_encode(indicators_bits[0], text),
             "Alphanumeric" => self.alphanumeric_encode(indicators_bits[1], text),
-            "Byte" => 2,
-            "Kanji" => 3,
-            "Chinese" => 4,
+            "Byte" => self.byte_encode(indicators_bits[2], text),
+            "Kanji" => self.kanji_encode(indicators_bits[3], text),
+            "Chinese" => self.chinese_encode(indicators_bits[3], text),
             _ => unreachable!() // TODO
         };
     }
