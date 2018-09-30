@@ -21,10 +21,6 @@ mod tests {
 //        });
 
         // Alphanumeric
-        b.iter(|| {
-            (0..1).fold((), |_, _|
-                encoder.encode("Alphanumeric", "1", "H", "CHANDLERGENG")
-            )
-        });
+        b.iter(|| (0..1).fold((), |_, _| encoder.encode("Alphanumeric", "1", "H", "XAVIER")));
     }
 }

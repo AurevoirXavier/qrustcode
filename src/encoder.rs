@@ -51,14 +51,14 @@ pub struct Encoder {
 
     // Error correction characteristics for QR Code
     // total_and_correction's index                                 -> version
-    // total_and_correction[version]                                -> (total number of codewords, [error_correction_levels])
-    // number of error correction codewords[error_correction_level] -> number of error correction codewords
+    // total_and_correction[version]                                -> (total number of codewords, [ec_levels])
+    // number of error correction codewords[ec_level] -> number of error correction codewords
     //
     // version:
     //      N/A    -> 0
     //      1 ~ 40 -> 1 ~ 40
     //
-    // error_correction_levels:
+    // ec_levels:
     //      L -> 0
     //      M -> 1
     //      Q -> 2
@@ -195,7 +195,7 @@ impl Encoder {
         vec![]
     }
 
-    pub fn encode(&self, mode: &str, version: &str, error_correction_level: &str, text: &str) {
+    pub fn encode(&self, mode: &str, version: &str, ec_level: &str, text: &str) {
         let version: usize = version.parse().unwrap();
         let bits_count = match self.indicators {
             Indicators::Normal(indicators) => indicators[match version {
