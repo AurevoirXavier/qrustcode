@@ -23,4 +23,18 @@ mod tests {
         // Alphanumeric
         b.iter(|| (0..1).fold((), |_, _| encoder.encode("Alphanumeric", "1", "H", "XAVIER")));
     }
+
+    #[test]
+    fn check_format() {
+        let mut fmt = 0b000111101011001;
+        let g = 0b10100110111;
+
+        for i in (0..5).rev() {
+            if fmt & (1 << (i + 10)) !=0 {
+                fmt ^= g << i;
+            }
+        }
+
+        println!("{}", fmt);
+    }
 }
