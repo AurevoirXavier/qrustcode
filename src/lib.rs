@@ -1,3 +1,4 @@
+#![feature(non_ascii_idents)]
 #![feature(test)]
 extern crate test;
 
@@ -24,17 +25,39 @@ mod tests {
         b.iter(|| (0..1).fold((), |_, _| encoder.encode("Alphanumeric", "1", "H", "XAVIER")));
     }
 
-    #[test]
-    fn check_format() {
-        let mut fmt = 0b000111101011001;
-        let g = 0b10100110111;
-
+    fn check_format(mut fmt: usize, mut g: usize) -> usize {
         for i in (0..5).rev() {
-            if fmt & (1 << (i + 10)) !=0 {
+            if fmt & (1 << (i + 10)) != 0 {
                 fmt ^= g << i;
             }
         }
 
+        fmt
+    }
+
+    #[test]
+    fn encoded_format() {
+        let mut fmt = 0b000111101011001;
+        fmt = (fmt << 10) ^ check_format(fmt << 10, 0b10100110111);
+
         println!("{}", fmt);
+        println!("{}", check_format(25722, 1335));
+    }
+
+    fn hamming_distance(mut x: usize, y: usize) -> usize {
+        let mut d = 0;
+        x ^= y;
+
+        while x != 0 {
+            d += x & 1;
+            x >>= 1;
+        }
+
+        d
+    }
+
+    #[test]
+    fn decode_format() {
+        println!("{}", hamming_distance(0b101100, 0b010011));
     }
 }
