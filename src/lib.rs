@@ -25,7 +25,7 @@ mod tests {
         b.iter(|| (0..1).fold((), |_, _| encoder.encode("Alphanumeric", "1", "H", "XAVIER")));
     }
 
-    fn check_format(mut fmt: usize, mut g: usize) -> usize {
+    fn check_format(mut fmt: usize, g: usize) -> usize {
         for i in (0..5).rev() {
             if fmt & (1 << (i + 10)) != 0 {
                 fmt ^= g << i;
@@ -59,21 +59,32 @@ mod tests {
     #[test]
     fn decode_format() { println!("{}", hamming_distance(0b101100, 0b010011)); }
 
-    static GF_EXP: &mut [usize; 512] = &mut [0; 512];
-    static GF_LOG: &mut [usize; 256] = &mut [0; 256];
+    static mut GF_EXP: &mut [usize; 512] = &mut [0; 512];
+    static mut GF_LOG: &mut [usize; 256] = &mut [0; 256];
 
-    fn init_tables(prim: Option<usize>) {
+    unsafe fn init_tables(prim: Option<usize>) {
         let prim = if let Some(prim) = prim { prim } else { 0x11d };
 
         let mut x = 1;
 
-        for i in (0..255) {
+        for i in 0..255 {
             GF_EXP[i] = x;
             GF_LOG[x] = i;
 
             x <<= 1;
 
-            if x & 0x100 { x ^= prim; }
+            if x & 0x100 != 0 { x ^= prim; }
+        }
+
+        for i in 255..512 { GF_EXP[i] = GF_EXP[i - 255]; }
+
+        println!("{:?}\n{:?}", GF_EXP.to_vec(), GF_LOG.to_vec());
+    }
+
+    #[test]
+    fn print_tables() {
+        unsafe {
+            init_tables(None);
         }
     }
 }
