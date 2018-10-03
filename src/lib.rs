@@ -57,7 +57,23 @@ mod tests {
     }
 
     #[test]
-    fn decode_format() {
-        println!("{}", hamming_distance(0b101100, 0b010011));
+    fn decode_format() { println!("{}", hamming_distance(0b101100, 0b010011)); }
+
+    static GF_EXP: &mut [usize; 512] = &mut [0; 512];
+    static GF_LOG: &mut [usize; 256] = &mut [0; 256];
+
+    fn init_tables(prim: Option<usize>) {
+        let prim = if let Some(prim) = prim { prim } else { 0x11d };
+
+        let mut x = 1;
+
+        for i in (0..255) {
+            GF_EXP[i] = x;
+            GF_LOG[x] = i;
+
+            x <<= 1;
+
+            if x & 0x100 { x ^= prim; }
+        }
     }
 }
