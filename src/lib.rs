@@ -64,7 +64,6 @@ mod tests {
 
     unsafe fn init_tables(prim: Option<usize>) {
         let prim = if let Some(prim) = prim { prim } else { 0x11d };
-
         let mut x = 1;
 
         for i in 0..255 {
@@ -77,14 +76,8 @@ mod tests {
         }
 
         for i in 255..512 { GF_EXP[i] = GF_EXP[i - 255]; }
-
-        println!("{:?}\n{:?}", GF_EXP.to_vec(), GF_LOG.to_vec());
     }
 
     #[test]
-    fn print_tables() {
-        unsafe {
-            init_tables(None);
-        }
-    }
+    fn print_tables() { unsafe { init_tables(None); } }
 }
