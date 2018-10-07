@@ -158,7 +158,6 @@ impl Encoder {
             _ => ()
         }
 
-//        println!("{:?}", encode.concat());
         encode.concat()
     }
 
@@ -179,7 +178,6 @@ impl Encoder {
 
         if len & 1 == 1 { encode.push(Encoder::binary(6, *self.alphanumeric_table.get(&text[len - 1]).unwrap())); }
 
-//        println!("{:?}", encode.concat());
         encode.concat()
     }
 
