@@ -15,20 +15,8 @@ enum Codewords {
 }
 
 pub struct Encoder {
-    // Switch for if using Micro QR Code
+    // switch: while using Micro QR Code
     micro: bool,
-
-    // modes' index -> mode
-    // modes        -> indicator
-    //
-    // mode:
-    //      Numeric      -> 0
-    //      Alphanumeric -> 1
-    //      Byte         -> 2
-    //      Kanji        -> 3
-    //      Chinese      -> 4
-    //      252 ~ 255 not implement yet
-    // encoding_modes: [[bool; 4]; 5],
 
     // Number of bits in character count indicator for QR Code
     // indicators_bit's index -> version
@@ -50,8 +38,8 @@ pub struct Encoder {
     alphanumeric_table: HashMap<char, usize>,
 
     // Error correction characteristics for QR Code
-    // total_and_correction's index                                 -> version
-    // total_and_correction[version]                                -> (total number of codewords, [ec_levels])
+    // total_and_correction's index                   -> version
+    // total_and_correction[version]                  -> (total number of codewords, [ec_levels])
     // number of error correction codewords[ec_level] -> number of error correction codewords
     //
     // version:
