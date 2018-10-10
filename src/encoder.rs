@@ -35,10 +35,35 @@ pub struct Encoder {
     //      Q -> 2
     //      H -> 3
     codewords: [[u32; 4]; 40],
+
+    // log and anti log tables
+    gf_exp: [u8; 512],
+    gf_log: [u8; 256],
 }
 
 impl Encoder {
+    fn init_gf_tables() -> ([u8; 512], [u8; 256]) {
+        let mut gf_exp = [0; 512];
+        let mut gf_log = [0; 256];
+        let mut x = 1u8;
+
+        for i in 0..255 {
+            gf_exp[i] = x;
+            gf_log[x] = i;
+
+            x <<= 1;
+
+            if x & 0x100 != 0 { x ^= 256; }
+        }
+
+        for i in 255..512 { gf_exp[i] = gf_exp[i - 255]; }
+
+        (gf_exp, gf_log)
+    }
+
     pub fn new() -> Encoder {
+        let (gf_exp, gf_log) = Encoder::init_gf_tables();
+
         Encoder {
             indicators: [
                 [10, 9, 8, 8],
@@ -70,6 +95,8 @@ impl Encoder {
                 [2071, 1631, 1171, 901], [2191, 1725, 1231, 961], [2306, 1812, 1286, 986], [2434, 1914, 1354, 1054],
                 [2566, 1992, 1426, 1096], [2702, 2102, 1502, 1142], [2812, 2216, 1582, 1222], [2956, 2334, 1666, 1276]
             ],
+            gf_exp,
+            gf_log,
         }
     }
 
@@ -91,6 +118,20 @@ impl Encoder {
         for (exp, bit) in binary.iter().rev().enumerate() { decimal += bit << exp; }
 
         decimal
+    }
+
+    fn error_correct(&self, mut encode: Vec<u8>, version: usize, ec_level: usize) -> Vec<u8> {
+        for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(0); } // terminator
+
+        let re_codewords = self.codewords[version][ec_level] - encode.len() as u32 / 8;
+
+        let mut decimals = vec![];
+        for binary in encode.chunks(8) { decimals.push(Encoder::decimal(binary)); }
+
+        let mut paddings = [236u8, 17].iter().cycle();
+        for _ in 0..re_codewords { decimals.push(*paddings.next().unwrap()); }
+
+        decimals
     }
 
     fn numeric_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
@@ -159,28 +200,18 @@ impl Encoder {
             _ => panic!()
         }];
 
-        let mut encode = match mode {
-            "Numeric" => self.numeric_encode(bits_counts[0], text),
-            "Alphanumeric" => self.alphanumeric_encode(bits_counts[1], text),
-            "Byte" => self.byte_encode(bits_counts[2], text),
-            "Kanji" => self.kanji_encode(bits_counts[3], text),
-            "Chinese" => self.chinese_encode(bits_counts[3], text),
-            _ => unreachable!() // TODO
-        };
-
-        {
-            // terminator
-            for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(0); }
-
-            let padding = self.codewords[version][ec_level] - encode.len() as u32 / 8;
-
-            let mut decimals = vec![];
-            for binary in encode.chunks(8) { decimals.push(Encoder::decimal(binary)); }
-            encode = decimals;
-
-            let mut padding_bytes = [236u8, 17].iter().cycle();
-            for _ in 0..padding { encode.push(*padding_bytes.next().unwrap()); }
-        }
+        let encode = self.error_correct(
+            match mode {
+                "Numeric" => self.numeric_encode(bits_counts[0], text),
+                "Alphanumeric" => self.alphanumeric_encode(bits_counts[1], text),
+                "Byte" => self.byte_encode(bits_counts[2], text),
+                "Kanji" => self.kanji_encode(bits_counts[3], text),
+                "Chinese" => self.chinese_encode(bits_counts[3], text),
+                _ => unreachable!() // TODO
+            },
+            version,
+            ec_level,
+        );
 
         println!("{:?}", encode);
     }
