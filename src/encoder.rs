@@ -1,23 +1,6 @@
 use std::collections::HashMap;
 
-enum Indicators {
-    Empty,
-    // TODO
-    Micro([[usize; 4]; 3]),
-    Normal([[usize; 4]; 3]),
-}
-
-enum Codewords {
-    Empty,
-    // TODO
-    Micro([(usize, [usize; 4]); 40]),
-    Normal([(usize, [usize; 4]); 41]),
-}
-
 pub struct Encoder {
-    // switch: while using Micro QR Code
-    micro: bool,
-
     // Number of bits in character count indicator for QR Code
     // indicators_bit's index -> version
     // indicators             -> [indicators' bits in different mode]
@@ -32,7 +15,7 @@ pub struct Encoder {
     //          27 ~ 40 -> 2
     //
     // mode: same as above
-    indicators: Indicators,
+    indicators: [[usize; 4]; 3],
 
     // Encoding table for Alphanumeric mode
     alphanumeric_table: HashMap<char, usize>,
@@ -51,35 +34,18 @@ pub struct Encoder {
     //      M -> 1
     //      Q -> 2
     //      H -> 3
-    codewords: Codewords,
+    codewords: [[usize; 4]; 40],
 }
 
 impl Encoder {
     pub fn new() -> Encoder {
-        let mut encoder = Encoder {
-            micro: false,
-            indicators: Indicators::Empty,
-            alphanumeric_table: HashMap::new(),
-            codewords: Codewords::Empty,
-        };
-        encoder.set_micro_mode(false);
-
-        encoder
-    }
-
-    pub fn set_micro_mode(&mut self, micro_mode: bool) {
-        self.micro = micro_mode;
-
-        if micro_mode {
-            unreachable!() // TODO
-        } else {
-            self.indicators = Indicators::Normal([
+        Encoder {
+            indicators: [
                 [10, 9, 8, 8],
                 [12, 11, 16, 10],
                 [14, 13, 16, 12]
-            ]);
-
-            self.alphanumeric_table = [
+            ],
+            alphanumeric_table: [
                 ('0', 0), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('5', 5),
                 ('6', 6), ('7', 7), ('8', 8), ('9', 9),
                 ('A', 10), ('B', 11), ('C', 12), ('D', 13), ('E', 14), ('F', 15),
@@ -91,21 +57,19 @@ impl Encoder {
                 ('.', 42), ('/', 43), (':', 44)
             ].iter()
                 .map(|&t| t)
-                .collect();
-
-            self.codewords = Codewords::Normal([
-                (0, [0, 0, 0, 0]),
-                (26, [7, 10, 13, 17]), (44, [10, 16, 22, 28]), (70, [15, 26, 36, 44]), (100, [20, 36, 52, 64]),
-                (134, [26, 48, 72, 88]), (172, [36, 64, 96, 112]), (196, [40, 72, 108, 130]), (242, [48, 88, 132, 156]),
-                (292, [60, 110, 160, 192]), (346, [72, 130, 192, 224]), (404, [80, 150, 224, 264]), (466, [96, 176, 260, 308]),
-                (532, [104, 198, 288, 352]), (581, [120, 216, 320, 384]), (655, [132, 240, 360, 432]), (733, [144, 280, 408, 480]),
-                (815, [168, 308, 448, 532]), (901, [180, 338, 504, 588]), (991, [196, 364, 546, 650]), (1085, [224, 416, 600, 700]),
-                (1156, [224, 442, 644, 750]), (1258, [252, 476, 690, 816]), (1364, [270, 504, 750, 900]), (1474, [300, 560, 810, 960]),
-                (1588, [312, 588, 810, 960]), (1706, [336, 644, 952, 1110]), (1828, [360, 700, 1020, 1200]), (1921, [390, 728, 1050, 1260]),
-                (2051, [420, 784, 1140, 1350]), (2185, [450, 812, 1200, 1440]), (2323, [480, 868, 1290, 1530]), (2456, [510, 924, 1350, 1620]),
-                (2611, [540, 980, 1440, 1710]), (2761, [570, 1036, 1530, 1800]), (2876, [570, 1064, 1590, 1890]), (3034, [600, 1120, 1680, 1980]),
-                (3196, [630, 1204, 1770, 2100]), (3362, [660, 1260, 1860, 2220]), (3532, [720, 1316, 1950, 2310]), (3706, [750, 1372, 2040, 2430]),
-            ])
+                .collect(),
+            codewords: [
+                [19, 16, 13, 9], [34, 28, 22, 16], [55, 44, 34, 26], [80, 64, 48, 36],
+                [108, 86, 62, 46], [136, 108, 76, 60], [156, 124, 88, 66], [194, 154, 110, 86],
+                [232, 182, 132, 100], [274, 216, 154, 122], [324, 254, 180, 140], [370, 290, 206, 158],
+                [428, 334, 244, 180], [461, 365, 261, 197], [523, 415, 295, 223], [589, 453, 325, 253],
+                [647, 507, 367, 283], [721, 563, 397, 313], [795, 627, 445, 341], [861, 669, 485, 385],
+                [932, 714, 512, 406], [1006, 782, 568, 442], [1094, 860, 614, 464], [1174, 914, 664, 514],
+                [1276, 1000, 718, 538], [1370, 1062, 754, 596], [1468, 1128, 808, 628], [1531, 1193, 871, 661],
+                [1631, 1267, 911, 701], [1735, 1373, 985, 745], [1843, 1455, 1033, 793], [1955, 1541, 1115, 845],
+                [2071, 1631, 1171, 901], [2191, 1725, 1231, 961], [2306, 1812, 1286, 986], [2434, 1914, 1354, 1054],
+                [2566, 1992, 1426, 1096], [2702, 2102, 1502, 1142], [2812, 2216, 1582, 1222], [2956, 2334, 1666, 1276]
+            ],
         }
     }
 
@@ -131,9 +95,7 @@ impl Encoder {
     fn numeric_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
         let len = text.len();
         let edge = len / 3 * 3;
-        let mut encode = if self.micro {
-            unreachable!() // TODO
-        } else { vec![vec![false, false, false, true]] };
+        let mut encode = vec![vec![false, false, false, true]];
 
         encode.push(Encoder::binary(bits_count, len));
 
@@ -152,16 +114,15 @@ impl Encoder {
     fn alphanumeric_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
         let len = text.len();
         let text: Vec<_> = text.chars().collect();
-        let mut encode = if self.micro {
-            unreachable!() // TODO
-        } else { vec![vec![false, false, true, false]] };
+        let mut encode = vec![vec![false, false, true, false]];
 
         encode.push(Encoder::binary(bits_count, len));
 
         for i in (0..len >> 1 << 1).step_by(2) {
             encode.push(Encoder::binary(
                 11,
-                45 * (*self.alphanumeric_table.get(&text[i]).unwrap()) + *self.alphanumeric_table.get(&text[i + 1]).unwrap()));
+                45 * (*self.alphanumeric_table.get(&text[i]).unwrap()) + *self.alphanumeric_table.get(&text[i + 1]).unwrap(),
+            ));
         }
 
         if len & 1 == 1 { encode.push(Encoder::binary(6, *self.alphanumeric_table.get(&text[len - 1]).unwrap())); }
@@ -182,38 +143,34 @@ impl Encoder {
     }
 
     pub fn encode(&self, mode: &str, version: &str, ec_level: &str, text: &str) {
-        let version: usize = version.parse().unwrap();
-        let bits_count = match self.indicators {
-            Indicators::Normal(indicators) => indicators[match version {
-                1...9 => 0,
-                10...26 => 1,
-                27...40 => 2,
-                _ => panic!()
-            }],
-            Indicators::Micro(indicators) => unreachable!(), // TODO
-            _ => unreachable!()
+        let version = version.parse::<usize>().unwrap() - 1; // index from zero
+        let ec_level = match ec_level {
+            "L" => 0,
+            "M" => 1,
+            "Q" => 2,
+            "H" => 3,
+            _ => panic!()
         };
+        let bits_counts = self.indicators[match version {
+            0...8 => 0,
+            9...25 => 1,
+            26...39 => 2,
+            _ => panic!()
+        }];
 
         let mut encode = match mode {
-            "Numeric" => self.numeric_encode(bits_count[0], text),
-            "Alphanumeric" => self.alphanumeric_encode(bits_count[1], text),
-            "Byte" => self.byte_encode(bits_count[2], text),
-            "Kanji" => self.kanji_encode(bits_count[3], text),
-            "Chinese" => self.chinese_encode(bits_count[3], text),
+            "Numeric" => self.numeric_encode(bits_counts[0], text),
+            "Alphanumeric" => self.alphanumeric_encode(bits_counts[1], text),
+            "Byte" => self.byte_encode(bits_counts[2], text),
+            "Kanji" => self.kanji_encode(bits_counts[3], text),
+            "Chinese" => self.chinese_encode(bits_counts[3], text),
             _ => unreachable!() // TODO
         };
 
         {
-            let padding = (match self.codewords {
-                Codewords::Normal(codewords) => {
-                    // normal mode terminator
-                    for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(false); }
+            for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(false); } // terminator
 
-                    codewords[version].0 * 4
-                }
-                Codewords::Micro(codewords) => unreachable!(), // TODO
-                _ => unreachable!()
-            } - encode.len()) / 8;
+            let padding = (self.codewords[version][ec_level] * 8 - encode.len()) / 8;
             let mut padding_bytes = [
                 [true, true, true, false, true, true, false, false],
                 [false, false, false, true, false, false, false, true]
