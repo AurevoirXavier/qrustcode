@@ -15,10 +15,10 @@ pub struct Encoder {
     //          27 ~ 40 -> 2
     //
     // mode: same as above
-    indicators: [[usize; 4]; 3],
+    indicators: [[u8; 4]; 3],
 
     // Encoding table for Alphanumeric mode
-    alphanumeric_table: HashMap<char, usize>,
+    alphanumeric_table: HashMap<char, u8>,
 
     // Error correction characteristics for QR Code
     // total_and_correction's index                   -> version
@@ -34,7 +34,7 @@ pub struct Encoder {
     //      M -> 1
     //      Q -> 2
     //      H -> 3
-    codewords: [[usize; 4]; 40],
+    codewords: [[u32; 4]; 40],
 }
 
 impl Encoder {
@@ -73,34 +73,35 @@ impl Encoder {
         }
     }
 
-    fn binary(mut bits_count: usize, mut num: usize) -> Vec<bool> {
+    fn binary(mut bits_count: usize, mut num: u32) -> Vec<u8> {
         let mut binary = vec![];
-        binary.resize(bits_count, false);
+        binary.resize(bits_count, 0);
 
         while num != 0 {
             bits_count -= 1;
-
-            binary[bits_count] = match num & 1 {
-                0 => false,
-                1 => true,
-                _ => unreachable!()
-            };
-
+            binary[bits_count] = (num & 1) as u8;
             num >>= 1;
         }
 
         binary
     }
 
-    fn numeric_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
+    fn decimal(binary: &[u8]) -> u8 {
+        let mut decimal = 0;
+        for (exp, bit) in binary.iter().rev().enumerate() { decimal += bit << exp; }
+
+        decimal
+    }
+
+    fn numeric_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
         let len = text.len();
         let edge = len / 3 * 3;
-        let mut encode = vec![vec![false, false, false, true]];
+        let mut encode = vec![vec![0, 0, 0, 1]];
 
-        encode.push(Encoder::binary(bits_count, len));
+        encode.push(Encoder::binary(bits_count as usize, len as u32));
 
         for i in (0..edge).step_by(3) {
-            encode.push(Encoder::binary(bits_count, text[i..i + 3].parse().unwrap()));
+            encode.push(Encoder::binary(bits_count as usize, text[i..i + 3].parse().unwrap()));
         }
 
         match len - edge {
@@ -111,34 +112,34 @@ impl Encoder {
         encode.concat()
     }
 
-    fn alphanumeric_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
+    fn alphanumeric_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
         let len = text.len();
         let text: Vec<_> = text.chars().collect();
-        let mut encode = vec![vec![false, false, true, false]];
+        let mut encode = vec![vec![0, 0, 1, 0]];
 
-        encode.push(Encoder::binary(bits_count, len));
+        encode.push(Encoder::binary(bits_count as usize, len as u32));
 
         for i in (0..len >> 1 << 1).step_by(2) {
             encode.push(Encoder::binary(
                 11,
-                45 * (*self.alphanumeric_table.get(&text[i]).unwrap()) + *self.alphanumeric_table.get(&text[i + 1]).unwrap(),
+                45 * (*self.alphanumeric_table.get(&text[i]).unwrap()) as u32 + *self.alphanumeric_table.get(&text[i + 1]).unwrap() as u32,
             ));
         }
 
-        if len & 1 == 1 { encode.push(Encoder::binary(6, *self.alphanumeric_table.get(&text[len - 1]).unwrap())); }
+        if len & 1 == 1 { encode.push(Encoder::binary(6, *self.alphanumeric_table.get(&text[len - 1]).unwrap() as u32)); }
 
         encode.concat()
     }
 
-    fn byte_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
+    fn byte_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
         vec![]
     }
 
-    fn kanji_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
+    fn kanji_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
         vec![]
     }
 
-    fn chinese_encode(&self, bits_count: usize, text: &str) -> Vec<bool> {
+    fn chinese_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
         vec![]
     }
 
@@ -168,15 +169,17 @@ impl Encoder {
         };
 
         {
-            for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(false); } // terminator
+            // terminator
+            for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(0); }
 
-            let padding = (self.codewords[version][ec_level] * 8 - encode.len()) / 8;
-            let mut padding_bytes = [
-                [true, true, true, false, true, true, false, false],
-                [false, false, false, true, false, false, false, true]
-            ].iter().cycle();
+            let padding = self.codewords[version][ec_level] - encode.len() as u32 / 8;
 
-            for _ in 0..padding { encode.extend_from_slice(padding_bytes.next().unwrap()); }
+            let mut decimals = vec![];
+            for binary in encode.chunks(8) { decimals.push(Encoder::decimal(binary)); }
+            encode = decimals;
+
+            let mut padding_bytes = [236u8, 17].iter().cycle();
+            for _ in 0..padding { encode.push(*padding_bytes.next().unwrap()); }
         }
 
         println!("{:?}", encode);
