@@ -11,21 +11,11 @@ mod tests {
     #[bench]
     fn encoder_test(b: &mut Bencher) {
         use self::encoder::Encoder;
-        let encoder = Encoder::new();
+        let encoder = Encoder::new("Alphanumeric", 1, "M", "HELLO WORLD");
 
-        // Numeric
-        b.iter(|| {
-            (0..1).fold((), |_, _|
-                encoder.encode("Numeric", "1", "H", "01234567")
-            )
-        });
-
-        // Alphanumeric
-        b.iter(|| (0..1).fold((), |_, _| encoder.encode("Alphanumeric", "1", "M", "HELLO WORLD")));
+        b.iter(|| (0..1).fold((), |_, _| encoder.encode()));
     }
 
     #[test]
-    fn p() {
-        println!("{}", b':');
-    }
+    fn p() {}
 }

@@ -62,6 +62,7 @@ fn binary(mut bits_count: usize, mut num: u16) -> Vec<u8> {
     binary.resize(bits_count, 0);
 
     while num != 0 {
+        println!("{}, {}", bits_count, num);
         bits_count -= 1;
         binary[bits_count] = (num & 1) as u8;
         num >>= 1;
@@ -95,6 +96,10 @@ fn alphanumeric_table(b: u8) -> u16 {
 }
 
 pub struct Encoder {
+    message: &'static str,
+    mode: u8,
+    ec_level: u8,
+    version: u8,
     // log and anti log tables
     gf_exp: [u8; 512],
     gf_log: [u8; 256],
@@ -120,10 +125,26 @@ impl Encoder {
         (gf_exp, gf_log)
     }
 
-    pub fn new() -> Encoder {
+    pub fn new(mode: &str, version: u8, ec_level: &str, message: &'static str) -> Encoder {
         let (gf_exp, gf_log) = Encoder::init_gf_tables();
-
         Encoder {
+            mode: match mode {
+                "Numeric" => 0,
+                "Alphanumeric" => 1,
+                "Byte" => 2,
+                "Kanji" => 3,
+                "Chinese" => 4,
+                _ => panic!()
+            },
+            version: version - 1, // index from 0
+            ec_level: match ec_level {
+                "L" => 0,
+                "M" => 1,
+                "Q" => 2,
+                "H" => 3,
+                _ => panic!()
+            },
+            message,
             gf_exp,
             gf_log,
         }
@@ -143,28 +164,30 @@ impl Encoder {
         decimals
     }
 
-    fn numeric_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
-        let len = text.len();
+    fn numeric_encode(&self, bits_count: u8) -> Vec<u8> {
+        let message = self.message;
+        let len = message.len();
         let edge = len / 3 * 3;
         let mut encode = vec![vec![0, 0, 0, 1]];
 
         encode.push(binary(bits_count as usize, len as u16));
 
         for i in (0..edge).step_by(3) {
-            encode.push(binary(bits_count as usize, text[i..i + 3].parse().unwrap()));
+            encode.push(binary(bits_count as usize, message[i..i + 3].parse().unwrap()));
         }
 
         match len - edge {
-            bits @ 1...2 => encode.push(binary(1 + 3 * bits, text[edge..len].parse().unwrap())),
-            _ => ()
+            bits @ 1...2 => encode.push(binary(1 + 3 * bits, message[edge..len].parse().unwrap())),
+            0 => (),
+            _ => panic!()
         }
 
         encode.concat()
     }
 
-    fn alphanumeric_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
-        let len = text.len();
-        let text = text.as_bytes();
+    fn alphanumeric_encode(&self, bits_count: u8) -> Vec<u8> {
+        let message = self.message.as_bytes();
+        let len = message.len();
         let mut encode = vec![vec![0, 0, 1, 0]];
 
         encode.push(binary(bits_count as usize, len as u16));
@@ -172,51 +195,44 @@ impl Encoder {
         for i in (0..len >> 1 << 1).step_by(2) {
             encode.push(binary(
                 11,
-                45 * alphanumeric_table(text[i]) + alphanumeric_table(text[i + 1]),
+                45 * alphanumeric_table(message[i]) + alphanumeric_table(message[i + 1]),
             ));
         }
 
-        if len & 1 == 1 { encode.push(binary(6, *text.last().unwrap() as u16)); } else {  }
+        if len & 1 == 1 { encode.push(binary(6, *message.last().unwrap() as u16)); } else {}
 
         encode.concat()
     }
 
-    fn byte_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
+    fn byte_encode(&self, bits_count: u8) -> Vec<u8> {
         vec![]
     }
 
-    fn kanji_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
+    fn kanji_encode(&self, bits_count: u8) -> Vec<u8> {
         vec![]
     }
 
-    fn chinese_encode(&self, bits_count: u8, text: &str) -> Vec<u8> {
+    fn chinese_encode(&self, bits_count: u8) -> Vec<u8> {
         vec![]
     }
 
-    pub fn encode(&self, mode: &str, version: &str, ec_level: &str, text: &str) {
-        let version = version.parse::<usize>().unwrap() - 1; // index from zero
-        let ec_level = match ec_level {
-            "L" => 0,
-            "M" => 1,
-            "Q" => 2,
-            "H" => 3,
-            _ => panic!()
-        };
-        let bits_counts = INDICATORS[match version {
+    pub fn encode(&self) {
+        let bits_counts = INDICATORS[match self.version {
             0...8 => 0,
             9...25 => 1,
             26...39 => 2,
             _ => panic!()
         }];
 
+        let (version, ec_level) = (self.version as usize, self.ec_level as usize);
         let encode = self.error_correct(
-            match mode {
-                "Numeric" => self.numeric_encode(bits_counts[0], text),
-                "Alphanumeric" => self.alphanumeric_encode(bits_counts[1], text),
-                "Byte" => self.byte_encode(bits_counts[2], text),
-                "Kanji" => self.kanji_encode(bits_counts[3], text),
-                "Chinese" => self.chinese_encode(bits_counts[3], text),
-                _ => unreachable!() // TODO
+            match self.mode {
+                0 => self.numeric_encode(bits_counts[0]),
+                1 => self.alphanumeric_encode(bits_counts[1]),
+                2 => self.byte_encode(bits_counts[2]),
+                3 => self.kanji_encode(bits_counts[3]),
+                4 => self.chinese_encode(bits_counts[3]),
+                _ => panic!()
             },
             version,
             ec_level,
