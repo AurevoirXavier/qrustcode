@@ -258,7 +258,5 @@ impl Encoder {
         let ec_cw_per_block = CODEWORDS[version][ec_level].1;
 
         println!("{:?}", encode);
-        println!("{:?}", self.gf_log.to_vec());
-        println!("{:?}", self.gf_exp.to_vec());
     }
 }
