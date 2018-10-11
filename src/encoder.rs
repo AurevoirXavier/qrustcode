@@ -146,27 +146,7 @@ pub struct Encoder {
 }
 
 impl Encoder {
-    fn init_gf_tables() -> ([u8; 512], [u8; 256]) {
-        let mut gf_exp = [0; 512];
-        let mut gf_log = [0; 256];
-        let mut x = 1;
-
-        for i in 0..255 {
-            gf_exp[i] = x as u8;
-            gf_log[x] = i as u8;
-
-            x <<= 1;
-
-            if x & 0x100 != 0 { x ^= 0x11d; }
-        }
-
-        for i in 255..512 { gf_exp[i] = gf_exp[i - 255]; }
-
-        (gf_exp, gf_log)
-    }
-
     pub fn new(mode: &str, version: u8, ec_level: &str, message: &'static str) -> Encoder {
-        let (gf_exp, gf_log) = Encoder::init_gf_tables();
         Encoder {
             mode: match mode {
                 "Numeric" => 0,
@@ -185,8 +165,6 @@ impl Encoder {
                 _ => panic!()
             },
             message,
-            gf_exp,
-            gf_log,
         }
     }
 
