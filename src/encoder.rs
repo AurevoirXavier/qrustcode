@@ -62,7 +62,6 @@ fn binary(mut bits_count: usize, mut num: u16) -> Vec<u8> {
     binary.resize(bits_count, 0);
 
     while num != 0 {
-        println!("{}, {}", bits_count, num);
         bits_count -= 1;
         binary[bits_count] = (num & 1) as u8;
         num >>= 1;
@@ -81,7 +80,7 @@ fn decimal(binary: &[u8]) -> u8 {
 fn alphanumeric_table(b: u8) -> u16 {
     match b {
         48...57 => b as u16 - 48, // '0' ~ '9'
-        65...90 => b as u16 - 65, // 'A' ~ 'Z'
+        65...90 => b as u16 - 55, // 'A' ~ 'Z'
         32 => 36,                 // ' '
         36 => 37,                 // '$'
         37 => 38,                 // '%'
@@ -199,7 +198,7 @@ impl Encoder {
             ));
         }
 
-        if len & 1 == 1 { encode.push(binary(6, *message.last().unwrap() as u16)); } else {}
+        if len & 1 == 1 { encode.push(binary(6, alphanumeric_table(*message.last().unwrap()))); }
 
         encode.concat()
     }
