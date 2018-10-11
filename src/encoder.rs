@@ -5,7 +5,7 @@
 //
 // version:
 //      micro_mode:
-//          M1 ~ M4 -> 0 ~ 3
+//          M1 ~ M4 -> TODO
 //      normal:
 //          1  ~ 9  -> 0
 //          10 ~ 26 -> 1
@@ -24,8 +24,7 @@ const INDICATORS: [[u8; 4]; 3] = [
 // number of error correction codewords[ec_level] -> number of error correction codewords
 //
 // version:
-//      N/A    -> 0
-//      1 ~ 40 -> 1 ~ 40
+//      1 ~ 40 -> 0 ~ 39
 //
 // ec_levels:
 //      L -> 0
