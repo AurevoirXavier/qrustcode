@@ -348,6 +348,6 @@ impl Encoder {
             .decimal_data()
             .error_correction();
 
-        println!("{:?}", self.data);
+//        println!("{:?}", self.data);
     }
 }
