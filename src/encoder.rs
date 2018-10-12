@@ -213,9 +213,9 @@ impl Encoder {
     }
 
     fn error_correction(&mut self) {
-        let generator_polynomial = match [self.version][self.ec_level].1 {
+        let ec_cw_per_block = CODEWORDS[self.version][self.ec_level].1;
+        let generator_polynomial: &[u8] = match ec_cw_per_block {
             2 => &[25, 1],
-            5 => &[113, 164, 166, 119, 10],
             6 => &[166, 1, 134, 5, 176, 15],
             7 => &[87, 229, 146, 149, 238, 102, 21],
             8 => &[175, 238, 208, 249, 215, 252, 196, 28],
@@ -252,6 +252,22 @@ impl Encoder {
             68 => &[247, 159, 223, 33, 224, 93, 77, 70, 90, 160, 32, 254, 43, 150, 84, 101, 190, 205, 133, 52, 60, 202, 165, 220, 203, 151, 93, 84, 15, 84, 253, 173, 160, 89, 227, 52, 199, 97, 95, 231, 52, 177, 41, 125, 137, 241, 166, 225, 118, 2, 54, 32, 82, 215, 175, 198, 43, 238, 235, 27, 101, 184, 127, 3, 5, 8, 163, 238],
             _ => panic!()
         };
+
+        let len = self.data.len();
+        let data = &mut self.data;
+        data.resize(len + ec_cw_per_block as usize, 0);
+
+        for i in 0..len {
+            let coef = data[i];
+            if coef != 0 {
+                let coef = GF_LOG[coef as usize] as usize;
+                for (x, &y) in data[i + 1..].iter_mut().zip(generator_polynomial.iter()) {
+                    *x ^= GF_EXP[y as usize + coef];
+                }
+            }
+        }
+
+        *data = data[len..].to_vec();
     }
 
     fn numeric_encode(&mut self, bits_count: usize) -> &mut Encoder {

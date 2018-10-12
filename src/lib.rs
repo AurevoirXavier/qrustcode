@@ -17,11 +17,9 @@ mod tests {
             .set_version(1)
             .set_ec_level("M");
 
-        b.iter(|| (0..1).fold((), |_, _| encoder.encode()));
+        b.iter(|| (0..1000).fold((), |_, _| encoder.encode()));
     }
 
     #[test]
-    fn p() {
-        println!("{:?}", b"\x19\x01".to_vec());
-    }
+    fn a() {}
 }
