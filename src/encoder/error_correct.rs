@@ -42,22 +42,20 @@ impl Encoder {
             _ => panic!()
         };
 
-        let len = self.data.len();
         let data = &mut self.data;
+        let len = data.len();
+
         data.resize(len + ec_cw_per_block as usize, 0);
 
         for i in 0..len {
-            let coef = data[i];
+            let coef = data[i] as usize;
             if coef != 0 {
                 let coef = GF_LOG[coef as usize] as usize;
-
-                for (x, &y) in data[i + 1..].iter_mut().zip(generator_polynomial.iter()) {
-                    *x ^= GF_EXP[y as usize + coef];
-                }
+                for (x, &y) in data[i + 1..].iter_mut().zip(generator_polynomial.iter()) { *x ^= GF_EXP[y as usize + coef]; }
             }
         }
 
-        *data = data[len..].to_vec();
+        self.ec_data = data.split_off(len);
     }
 }
 

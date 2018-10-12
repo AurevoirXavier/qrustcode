@@ -4,8 +4,8 @@ mod error_correct;
 mod qrcode_info;
 
 pub struct Encoder {
-    message: &'static str,
     data: Vec<u8>,
+    ec_data: Vec<u8>,
     mode: u8,
     version: usize,
     ec_level: usize,
@@ -14,18 +14,12 @@ pub struct Encoder {
 impl Encoder {
     pub fn new() -> Encoder {
         Encoder {
-            message: "",
             data: vec![],
+            ec_data: vec![],
             mode: 0,
             version: 0,
             ec_level: 0,
         }
-    }
-
-    pub fn message(mut self, message: &'static str) -> Encoder {
-        self.message = message;
-
-        self
     }
 
     pub fn mode(mut self, mode: &str) -> Encoder {

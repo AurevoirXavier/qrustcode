@@ -12,12 +12,11 @@ mod tests {
     fn encoder_test(b: &mut Bencher) {
         use self::encoder::Encoder;
         let mut encoder = Encoder::new()
-            .message("HELLO WORLD")
             .mode("Alphanumeric")
             .version(1)
             .ec_level("M");
 
-        b.iter(|| (0..1000).fold((), |_, _| encoder.encode()));
+        b.iter(|| (0..1000).fold((), |_, _| encoder.encode("HELLO WORLD")));
     }
 
     #[test]
