@@ -60,7 +60,7 @@ impl Encoder {
 }
 
 // log and anti log tables in Galois Field - GF(2^8)
-// store double GF_EXP table to guarantee GF_EXP[(GF_LOG[x] + GF_LOG[y])] not out of index
+// store double GF_EXP table to guarantee `GF_EXP[(GF_LOG[x] + GF_LOG[y])]` not out of index
 const GF_EXP: [u8; 512] = [
     1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38, 76, 152, 45, 90, 180, 117, 234,
     201, 143, 3, 6, 12, 24, 48, 96, 192, 157, 39, 78, 156, 37, 74, 148, 53, 106, 212, 181, 119, 238,
