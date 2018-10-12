@@ -147,30 +147,54 @@ pub struct Encoder {
 }
 
 impl Encoder {
-    pub fn new(mode: &str, version: usize, ec_level: &str, message: &'static str) -> Encoder {
+    pub fn new() -> Encoder {
         Encoder {
-            message,
+            message: "",
             data: vec![],
-            mode: match mode {
-                "Numeric" => 0,
-                "Alphanumeric" => 1,
-                "Byte" => 2,
-                "Kanji" => 3,
-                "Chinese" => 4,
-                _ => panic!()
-            },
-            version: version - 1, // index from 0
-            ec_level: match ec_level {
-                "L" => 0,
-                "M" => 1,
-                "Q" => 2,
-                "H" => 3,
-                _ => panic!()
-            },
+            mode: 0,
+            version: 0,
+            ec_level: 0,
         }
     }
 
-    fn fill_blank(&mut self) -> &mut Encoder {
+    pub fn set_message(mut self, message: &'static str) -> Encoder {
+        self.message = message;
+
+        self
+    }
+
+    pub fn set_mode(mut self, mode: &str) -> Encoder {
+        self.mode = match mode {
+            "Numeric" => 0,
+            "Alphanumeric" => 1,
+            "Byte" => 2,
+            "Kanji" => 3,
+            "Chinese" => 4,
+            _ => panic!()
+        };
+
+        self
+    }
+
+    pub fn set_version(mut self, version: usize) -> Encoder {
+        self.version = version - 1; // index from 0
+
+        self
+    }
+
+    pub fn set_ec_level(mut self, ec_level: &str) -> Encoder {
+        self.ec_level = match ec_level {
+            "L" => 0,
+            "M" => 1,
+            "Q" => 2,
+            "H" => 3,
+            _ => panic!()
+        };
+
+        self
+    }
+
+    fn decimal_data(&mut self) -> &mut Encoder {
         let data = &mut self.data;
 
         for _ in 0..12 - (4 + data.len()) % 8 { data.push(0); } // terminator
@@ -265,7 +289,7 @@ impl Encoder {
             4 => self.chinese_encode(bits_counts[3] as usize),
             _ => panic!()
         }
-            .fill_blank()
+            .decimal_data()
             .error_correction();
 
         let ec_cw_per_block = CODEWORDS[self.version][self.ec_level].1;
