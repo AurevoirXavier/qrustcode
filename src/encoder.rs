@@ -56,7 +56,8 @@ const CODEWORDS: [[(u32, u8); 4]; 40] = [
     [(2812, 30), (2216, 28), (1582, 30), (1222, 30)], [(2956, 30), (2334, 28), (1666, 30), (1276, 30)]
 ];
 
-// log and anti log tables in Galois Field
+// log and anti log tables in Galois Field - GF(2^8)
+// store double GF_EXP table to guarantee GF_EXP[(GF_LOG[x] + GF_LOG[y])] not out of index
 const GF_EXP: [u8; 512] = [
     1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38, 76, 152, 45, 90, 180, 117, 234,
     201, 143, 3, 6, 12, 24, 48, 96, 192, 157, 39, 78, 156, 37, 74, 148, 53, 106, 212, 181, 119, 238,
@@ -122,31 +123,34 @@ fn decimal(binary: &[u8]) -> u8 {
 
 fn alphanumeric_table(b: u8) -> u16 {
     match b {
-        48...57 => b as u16 - 48, // '0' ~ '9'
-        65...90 => b as u16 - 55, // 'A' ~ 'Z'
-        32 => 36,                 // ' '
-        36 => 37,                 // '$'
-        37 => 38,                 // '%'
-        42 => 39,                 // '*'
-        43 => 40,                 // '+'
-        45 => 41,                 // '-'
-        46 => 42,                 // '.'
-        47 => 43,                 // '/'
-        58 => 44,                 // ':'
+        b'0'...b'9' => (b - 48) as u16, // 48 = b'0'
+        b'A'...b'Z' => (b - 55) as u16, // 55 = b'A' - 10
+        b' ' => 36,
+        b'$' => 37,
+        b'%' => 38,
+        b'*' => 39,
+        b'+' => 40,
+        b'-' => 41,
+        b'.' => 42,
+        b'/' => 43,
+        b':' => 44,
         _ => panic!()
     }
 }
 
 pub struct Encoder {
     message: &'static str,
+    data: Vec<u8>,
     mode: u8,
-    ec_level: u8,
-    version: u8,
+    version: usize,
+    ec_level: usize,
 }
 
 impl Encoder {
-    pub fn new(mode: &str, version: u8, ec_level: &str, message: &'static str) -> Encoder {
+    pub fn new(mode: &str, version: usize, ec_level: &str, message: &'static str) -> Encoder {
         Encoder {
+            message,
+            data: vec![],
             mode: match mode {
                 "Numeric" => 0,
                 "Alphanumeric" => 1,
@@ -163,77 +167,89 @@ impl Encoder {
                 "H" => 3,
                 _ => panic!()
             },
-            message,
         }
     }
 
-    fn error_correct(&self, mut encode: Vec<u8>, version: usize, ec_level: usize) -> Vec<u8> {
-        for _ in 0..12 - (4 + encode.len()) % 8 { encode.push(0); } // terminator
+    fn fill_blank(&mut self) -> &mut Encoder {
+        let data = &mut self.data;
 
-        let re_cws = CODEWORDS[version][ec_level].0 - encode.len() as u32 / 8;
+        for _ in 0..12 - (4 + data.len()) % 8 { data.push(0); } // terminator
+
+        let re_cws = CODEWORDS[self.version][self.ec_level].0 - data.len() as u32 / 8;
 
         let mut decimals = vec![];
-        for binary in encode.chunks(8) { decimals.push(decimal(binary)); }
+        for binary in data.chunks(8) { decimals.push(decimal(binary)); }
 
         let mut paddings = [236u8, 17].iter().cycle();
         for _ in 0..re_cws { decimals.push(*paddings.next().unwrap()); }
 
-        decimals
+        *data = decimals;
+
+        self
     }
 
-    fn numeric_encode(&self, bits_count: u8) -> Vec<u8> {
+    fn error_correction(&mut self) {
+//        let mut message = vec![];
+//        message.resize(self.message.len() + )
+    }
+
+    fn numeric_encode(&mut self, bits_count: usize) -> &mut Encoder {
         let message = self.message;
         let len = message.len();
         let edge = len / 3 * 3;
-        let mut encode = vec![vec![0, 0, 0, 1]];
+        let mut data = vec![vec![0, 0, 0, 1]];
 
-        encode.push(binary(bits_count as usize, len as u16));
+        data.push(binary(bits_count, len as u16));
 
         for i in (0..edge).step_by(3) {
-            encode.push(binary(bits_count as usize, message[i..i + 3].parse().unwrap()));
+            data.push(binary(bits_count, message[i..i + 3].parse().unwrap()));
         }
 
         match len - edge {
-            bits @ 1...2 => encode.push(binary(1 + 3 * bits, message[edge..len].parse().unwrap())),
+            bits @ 1...2 => data.push(binary(1 + 3 * bits, message[edge..len].parse().unwrap())),
             0 => (),
             _ => panic!()
         }
 
-        encode.concat()
+        self.data = data.concat();
+
+        self
     }
 
-    fn alphanumeric_encode(&self, bits_count: u8) -> Vec<u8> {
+    fn alphanumeric_encode(&mut self, bits_count: usize) -> &mut Encoder {
         let message = self.message.as_bytes();
         let len = message.len();
-        let mut encode = vec![vec![0, 0, 1, 0]];
+        let mut data = vec![vec![0, 0, 1, 0]];
 
-        encode.push(binary(bits_count as usize, len as u16));
+        data.push(binary(bits_count, len as u16));
 
         for i in (0..len >> 1 << 1).step_by(2) {
-            encode.push(binary(
+            data.push(binary(
                 11,
                 45 * alphanumeric_table(message[i]) + alphanumeric_table(message[i + 1]),
             ));
         }
 
-        if len & 1 == 1 { encode.push(binary(6, alphanumeric_table(*message.last().unwrap()))); }
+        if len & 1 == 1 { data.push(binary(6, alphanumeric_table(*message.last().unwrap()))); }
 
-        encode.concat()
+        self.data = data.concat();
+
+        self
     }
 
-    fn byte_encode(&self, bits_count: u8) -> Vec<u8> {
-        vec![]
+    fn byte_encode(&mut self, bits_count: usize) -> &mut Encoder {
+        self
     }
 
-    fn kanji_encode(&self, bits_count: u8) -> Vec<u8> {
-        vec![]
+    fn kanji_encode(&mut self, bits_count: usize) -> &mut Encoder {
+        self
     }
 
-    fn chinese_encode(&self, bits_count: u8) -> Vec<u8> {
-        vec![]
+    fn chinese_encode(&mut self, bits_count: usize) -> &mut Encoder {
+        self
     }
 
-    pub fn encode(&self) {
+    pub fn encode(&mut self) {
         let bits_counts = INDICATORS[match self.version {
             0...8 => 0,
             9...25 => 1,
@@ -241,21 +257,19 @@ impl Encoder {
             _ => panic!()
         }];
 
-        let (version, ec_level) = (self.version as usize, self.ec_level as usize);
-        let encode = self.error_correct(
-            match self.mode {
-                0 => self.numeric_encode(bits_counts[0]),
-                1 => self.alphanumeric_encode(bits_counts[1]),
-                2 => self.byte_encode(bits_counts[2]),
-                3 => self.kanji_encode(bits_counts[3]),
-                4 => self.chinese_encode(bits_counts[3]),
-                _ => panic!()
-            },
-            version,
-            ec_level,
-        );
-        let ec_cw_per_block = CODEWORDS[version][ec_level].1;
+        match self.mode {
+            0 => self.numeric_encode(bits_counts[0] as usize),
+            1 => self.alphanumeric_encode(bits_counts[1] as usize),
+            2 => self.byte_encode(bits_counts[2] as usize),
+            3 => self.kanji_encode(bits_counts[3] as usize),
+            4 => self.chinese_encode(bits_counts[3] as usize),
+            _ => panic!()
+        }
+            .fill_blank()
+            .error_correction();
 
-        println!("{:?}", encode);
+        let ec_cw_per_block = CODEWORDS[self.version][self.ec_level].1;
+
+        println!("{:?}", self.data);
     }
 }
