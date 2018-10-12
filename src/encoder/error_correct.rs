@@ -1,8 +1,8 @@
-use super::{qrcode_info::CODEWORDS, Encoder};
+use super::{qrcode_info::EC_CW_PER_BLOCKS, Encoder};
 
 impl Encoder {
     pub fn error_correction(&mut self) {
-        let ec_cw_per_block = CODEWORDS[self.version][self.ec_level].1;
+        let ec_cw_per_block = EC_CW_PER_BLOCKS[self.version][self.ec_level];
         let generator_polynomial: &[u8] = match ec_cw_per_block {
             2 => &[25, 1],
             6 => &[166, 1, 134, 5, 176, 15],
@@ -50,6 +50,7 @@ impl Encoder {
             let coef = data[i];
             if coef != 0 {
                 let coef = GF_LOG[coef as usize] as usize;
+
                 for (x, &y) in data[i + 1..].iter_mut().zip(generator_polynomial.iter()) {
                     *x ^= GF_EXP[y as usize + coef];
                 }
