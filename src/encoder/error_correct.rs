@@ -48,10 +48,14 @@ impl Encoder {
         data.resize(len + ec_cw_per_block as usize, 0);
 
         for i in 0..len {
-            let coef = data[i] as usize;
+            let coef = data[i];
             if coef != 0 {
-                let coef = GF_LOG[coef as usize] as usize;
-                for (x, &y) in data[i + 1..].iter_mut().zip(generator_polynomial.iter()) { *x ^= GF_EXP[y as usize + coef]; }
+                let coef = GF_LOG[coef as usize];
+                for (x, &y) in data[i + 1..]
+                    .iter_mut()
+                    .zip(
+                        generator_polynomial.iter()
+                    ) { *x ^= GF_EXP[y as usize + coef as usize]; }
             }
         }
 

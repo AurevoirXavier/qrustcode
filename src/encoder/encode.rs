@@ -1,4 +1,10 @@
-use super::{bits::binary, qrcode_info::{INDICATORS, alphanumeric_table}, Encoder};
+use super::{
+    bits::binary, qrcode_info::{
+        INDICATORS,
+        alphanumeric_table,
+    },
+    Encoder,
+};
 
 impl Encoder {
     fn numeric_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
