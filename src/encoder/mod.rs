@@ -1,5 +1,5 @@
 mod bits;
-mod draw;
+mod matrix;
 mod encode;
 mod error_correct;
 mod qrcode_info;
