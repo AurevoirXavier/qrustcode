@@ -25,7 +25,7 @@ impl Encoder {
 
         for _ in 0..12 - (4 + data.len()) % 8 { data.push(0); } // terminator
 
-        let re_cws = CAPACITIES[self.version][self.ec_level] - data.len() as u32 / 8;
+        let re_cws = CAPACITIES[self.version][self.ec_level] - data.len() as u16 / 8;
 
         let mut decimals = vec![];
         for binary in data.chunks(8) { decimals.push(decimal(binary)); }

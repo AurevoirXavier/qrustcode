@@ -34,7 +34,14 @@ impl Encoder {
 
         data.push(binary(bits_count, len as u16));
 
-        for i in (0..len >> 1 << 1).step_by(2) { data.push(binary(11, 45 * alphanumeric_table(message[i]) + alphanumeric_table(message[i + 1]))); }
+        for i in (0..len >> 1 << 1).step_by(2) {
+            data.push(binary(
+                11,
+                45 *
+                    alphanumeric_table(message[i])
+                    +
+                    alphanumeric_table(message[i + 1])));
+        }
 
         if len & 1 == 1 { data.push(binary(6, alphanumeric_table(*message.last().unwrap()))); }
 
@@ -43,17 +50,11 @@ impl Encoder {
         self
     }
 
-    fn byte_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
-        self
-    }
+    fn byte_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
-    fn kanji_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
-        self
-    }
+    fn kanji_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
-    fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
-        self
-    }
+    fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
     pub fn encode(&mut self, message: &str) {
         let bits_counts = INDICATORS[match self.version {
@@ -73,8 +74,5 @@ impl Encoder {
         }
             .decimal_data()
             .error_correction();
-
-//        println!("{:?}", self.data);
-//        println!("{:?}", self.ec_data);
     }
 }
