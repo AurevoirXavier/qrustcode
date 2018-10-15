@@ -1,7 +1,9 @@
-use super::{qrcode_info::EC_CW_PER_BLOCKS, Encoder};
+use super::Encoder;
 
 impl Encoder {
     pub fn error_correction(&mut self) {
+        use super::qrcode_info::EC_CW_PER_BLOCKS;
+
         let ec_cw_per_block = EC_CW_PER_BLOCKS[self.version][self.ec_level];
         let generator_polynomial: &[u8] = match ec_cw_per_block {
             2 => &[25, 1],
@@ -59,7 +61,7 @@ impl Encoder {
             }
         }
 
-        self.ec_data = data.split_off(len);
+        data.split_off(len);
     }
 }
 

@@ -6,7 +6,6 @@ mod qrcode_info;
 
 pub struct Encoder {
     data: Vec<u8>,
-    ec_data: Vec<u8>,
     mode: u8,
     version: usize,
     ec_level: usize,
@@ -16,9 +15,8 @@ impl Encoder {
     pub fn new() -> Encoder {
         Encoder {
             data: vec![],
-            ec_data: vec![],
             mode: 0,
-            version: 0,
+            version: 255,
             ec_level: 0,
         }
     }
