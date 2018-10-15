@@ -12,32 +12,46 @@ impl Encoder {
         if self.version == 255 {
             use super::qrcode_info::CAPACITIES;
 
-            for (&version, indicators) in [8usize, 25, 39].iter().zip(INDICATORS.iter()) {
-                let capacity = 4 + match self.mode {
-                    0 => {
-                        indicators[0] as u16 + 10 * (len / 3) + match len % 3 {
-                            0 => 0,
-                            1 => 4,
-                            2 => 7,
-                            _ => panic!()
+            let mut total_bits = 4 + match self.mode {
+                0 => {
+                    10 * (len / 3) + match len % 3 {
+                        0 => 0,
+                        1 => 4,
+                        2 => 7,
+                        _ => panic!()
+                    }
+                }
+                1 => 11 * (len >> 1) + match len & 1 {
+                    0 => 0,
+                    1 => 6,
+                    _ => panic!()
+                },
+                2 => 8 * len,
+                3 | 4 => 13 * len,
+                _ => panic!() // TODO
+            };
+
+            for (&(start, end), indicators) in [(0usize, 8usize), (9, 25), (26, 39)].iter().zip(INDICATORS.iter()) {
+                total_bits += match self.mode {
+                    0 => indicators[0],
+                    1 => indicators[1],
+                    2 => indicators[2],
+                    3 | 4 => indicators[3],
+                    _ => panic!() // TODO
+                } as u16;
+
+                if total_bits < CAPACITIES[end][self.ec_level] {
+                    for version in start..=end {
+                        if total_bits < CAPACITIES[version][self.ec_level] {
+                            println!("{}", total_bits);
+                            self.version = version;
+
+                            return indicators[self.mode as usize] as usize;
                         }
                     }
-                    1 => indicators[1] as u16 + 11 * (len >> 2) + match len & 1 {
-                        0 => 0,
-                        1 => 6,
-                        _ => panic!()
-                    },
-                    2 => indicators[2] as u16 + 8 * len,
-                    3 | 4 => indicators[3] as u16 + 13 * len,
-                    _ => panic!() // TODO
-                };
-
-                if capacity < CAPACITIES[version][self.ec_level] {
-                    self.version = 0;
-
-                    return indicators[self.mode as usize] as usize;
                 }
             }
+
             panic!()
         }
 
@@ -103,6 +117,7 @@ impl Encoder {
     pub fn encode(&mut self, message: &str) {
         use super::qrcode_info::INDICATORS;
 
+        println!("{}", message.len());
         let bits_count = self.version_detect(message.len() as u16);
 
         match self.mode {
