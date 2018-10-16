@@ -4,7 +4,9 @@ use super::{
 };
 
 impl Encoder {
-    fn mode_detect(&mut self) {}
+    fn mode_detect(&mut self, message: &str) {
+
+    }
 
     fn version_detect(&mut self, len: u16) -> usize {
         use super::qrcode_info::INDICATORS;

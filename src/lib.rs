@@ -21,11 +21,6 @@ mod tests {
 
     #[test]
     fn test() {
-        use self::encoder::Encoder;
-        let mut encoder = Encoder::new()
-            .mode("Alphanumeric")
-//            .version(1)
-            .ec_level("M")
-            .encode("HELLO WORLD");
+        println!("{}", "\u{4e00}");
     }
 }
