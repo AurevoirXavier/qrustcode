@@ -16,19 +16,19 @@ pub struct Encoder {
     mode: u8,
 
     // version:
-    //      micro_mode:
-    //          M1 ~ M4 -> TODO
-    //      normal:
-    //          1  ~ 9  -> 0
-    //          10 ~ 26 -> 1
-    //          27 ~ 40 -> 2
+    //     micro_mode:
+    //         M1 ~ M4 -> TODO
+    //     normal:
+    //         1  ~ 9  -> 0
+    //         10 ~ 26 -> 1
+    //         27 ~ 40 -> 2
     version: usize,
 
     // ec_levels:
-    //      L -> 0
-    //      M -> 1
-    //      Q -> 2
-    //      H -> 3
+    //     L -> 0
+    //     M -> 1
+    //     Q -> 2
+    //     H -> 3
     ec_level: usize,
 }
 
@@ -36,7 +36,7 @@ impl Encoder {
     pub fn new() -> Encoder {
         Encoder {
             data: vec![],
-            mode: 0,
+            mode: 255,
             version: 255,
             ec_level: 0,
         }

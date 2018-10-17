@@ -23,12 +23,12 @@ pub fn alphanumeric_table(b: u8) -> u16 {
 // INDICATORS[version][mode] -> indicator's bits
 //
 // version:
-//      micro_mode:
-//          M1 ~ M4 -> TODO
-//      normal:
-//          1  ~ 9  -> 0
-//          10 ~ 26 -> 1
-//          27 ~ 40 -> 2
+//     micro_mode:
+//         M1 ~ M4 -> TODO
+//     normal:
+//         1  ~ 9  -> 0
+//         10 ~ 26 -> 1
+//         27 ~ 40 -> 2
 //
 // mode:
 //     Numeric      -> 0
@@ -36,10 +36,10 @@ pub fn alphanumeric_table(b: u8) -> u16 {
 //     Byte         -> 2
 //     Kanji        -> 3
 //     Chinese      -> 4
-pub const INDICATORS: [[u8; 4]; 3] = [
-    [10, 9, 8, 8],
-    [12, 11, 16, 10],
-    [14, 13, 16, 12],
+pub const INDICATORS: [[u8; 5]; 3] = [
+    [10, 9, 8, 8, 8],
+    [12, 11, 16, 10, 10],
+    [14, 13, 16, 12, 12],
 ];
 
 
@@ -50,10 +50,10 @@ pub const INDICATORS: [[u8; 4]; 3] = [
 // version: same as above
 //
 // ec_levels:
-//      L -> 0
-//      M -> 1
-//      Q -> 2
-//      H -> 3
+//     L -> 0
+//     M -> 1
+//     Q -> 2
+//     H -> 3
 pub const CAPACITIES: [[u16; 4]; 40] = [
     [152, 128, 104, 72], [272, 224, 176, 128], [440, 352, 272, 208], [640, 512, 384, 288],
     [864, 688, 496, 368], [1088, 864, 608, 480], [1248, 992, 704, 528], [1552, 1232, 880, 688],

@@ -5,7 +5,44 @@ use super::{
 
 impl Encoder {
     fn mode_detect(&mut self, message: &str) {
-        if message.chars().all(|c| c >= '\u{4e00}' && c <= '\u{9fff}' ) { self.mode = 4; }
+        if self.mode != 255 { return; }
+
+        fn numeric(c: char) -> bool {
+            match c {
+                '0'...'9' => true,
+                _ => false
+            }
+        }
+
+        fn chinese(c: char) -> bool { if c >= '\u{4e00}' && c <= '\u{9fff}' { true } else { false } }
+
+        let mut modes = vec![0, 1, 3, 4];
+        let mut fns = [numeric, numeric, chinese, numeric, chinese];
+
+        // check every char
+        for c in message.chars() {
+            let mut fix = 0;
+            // check every mode(remained)
+            for i in 0..modes.len() {
+                let i = i - fix;
+
+                if !fns[modes[i]](c) {
+                    modes.remove(i);
+
+                    //    when fix == mode.len() - 1
+                    // -> modes is empty
+                    // -> use Byte(UTF-8) mode
+                    if fix == 3 {
+                        self.mode = 2;
+                        return;
+                    }
+
+                    fix += 1;
+                }
+            }
+        }
+
+        self.mode = modes[0] as u8;
     }
 
     fn version_detect(&mut self, len: u16) -> usize {
@@ -34,19 +71,12 @@ impl Encoder {
             };
 
             for (&(start, end), indicators) in [(0usize, 8usize), (9, 25), (26, 39)].iter().zip(INDICATORS.iter()) {
-                total_bits += match self.mode {
-                    0 => indicators[0],
-                    1 => indicators[1],
-                    2 => indicators[2],
-                    3 | 4 => indicators[3],
-                    _ => panic!() // TODO
-                } as u16;
+                total_bits += indicators[self.mode as usize] as u16;
 
                 if total_bits < CAPACITIES[end][self.ec_level] {
                     for version in start..=end {
                         if total_bits < CAPACITIES[version][self.ec_level] {
                             self.version = version;
-
                             return indicators[self.mode as usize] as usize;
                         }
                     }
@@ -118,7 +148,7 @@ impl Encoder {
     pub fn encode(&mut self, message: &str) {
         use super::qrcode_info::INDICATORS;
 
-        println!("{}", message.len());
+        self.mode_detect(message);
         let bits_count = self.version_detect(message.len() as u16);
 
         match self.mode {
@@ -133,5 +163,6 @@ impl Encoder {
             .error_correction();
 
         println!("{}", self.version);
+//        println!("{}", self.mode);
     }
 }
