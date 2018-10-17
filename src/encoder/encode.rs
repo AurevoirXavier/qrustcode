@@ -5,7 +5,7 @@ use super::{
 
 impl Encoder {
     fn mode_detect(&mut self, message: &str) {
-
+        if message.chars().all(|c| c >= '\u{4e00}' && c <= '\u{9fff}' ) { self.mode = 4; }
     }
 
     fn version_detect(&mut self, len: u16) -> usize {
@@ -45,7 +45,6 @@ impl Encoder {
                 if total_bits < CAPACITIES[end][self.ec_level] {
                     for version in start..=end {
                         if total_bits < CAPACITIES[version][self.ec_level] {
-                            println!("{}", total_bits);
                             self.version = version;
 
                             return indicators[self.mode as usize] as usize;

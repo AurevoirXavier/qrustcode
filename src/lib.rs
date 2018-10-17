@@ -21,6 +21,5 @@ mod tests {
 
     #[test]
     fn test() {
-        println!("{}", "\u{4e00}");
     }
 }

@@ -35,6 +35,7 @@ pub fn alphanumeric_table(b: u8) -> u16 {
 //     Alphanumeric -> 1
 //     Byte         -> 2
 //     Kanji        -> 3
+//     Chinese      -> 4
 pub const INDICATORS: [[u8; 4]; 3] = [
     [10, 9, 8, 8],
     [12, 11, 16, 10],
@@ -46,8 +47,7 @@ pub const INDICATORS: [[u8; 4]; 3] = [
 //
 // CAPACITIES[version][ec_level] -> total number of data codewords for this Version and ec level
 //
-// version:
-//      1 ~ 40 -> 0 ~ 39
+// version: same as above
 //
 // ec_levels:
 //      L -> 0

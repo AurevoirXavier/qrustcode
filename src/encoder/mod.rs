@@ -6,8 +6,29 @@ mod qrcode_info;
 
 pub struct Encoder {
     data: Vec<u8>,
+
+    // mode:
+    //     Numeric      -> 0
+    //     Alphanumeric -> 1
+    //     Byte         -> 2
+    //     Kanji        -> 3
+    //     Chinese      -> 4
     mode: u8,
+
+    // version:
+    //      micro_mode:
+    //          M1 ~ M4 -> TODO
+    //      normal:
+    //          1  ~ 9  -> 0
+    //          10 ~ 26 -> 1
+    //          27 ~ 40 -> 2
     version: usize,
+
+    // ec_levels:
+    //      L -> 0
+    //      M -> 1
+    //      Q -> 2
+    //      H -> 3
     ec_level: usize,
 }
 
