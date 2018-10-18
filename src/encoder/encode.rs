@@ -14,10 +14,14 @@ impl Encoder {
             }
         }
 
-        fn chinese(c: char) -> bool { if c >= '\u{4e00}' && c <= '\u{9fff}' { true } else { false } }
+        fn alphanumeric(c: char) -> bool { if super::qrcode_info::alphanumeric_table(c as u8) == 0 { false } else { true } }
+
+        fn chinese(c: char) -> bool { if c <= '\u{4e00}' || c >= '\u{9fff}' { false } else { true } }
+
+        fn kanji(c: char) -> bool { if c <= '\u{0800}' || c >= '\u{4e00}' { false } else { true } }
 
         let mut modes = vec![0, 1, 3, 4];
-        let mut fns = [numeric, numeric, chinese, numeric, chinese];
+        let mut fns = [numeric, alphanumeric, chinese, kanji, chinese];
 
         // check every char
         for c in message.chars() {
@@ -127,12 +131,13 @@ impl Encoder {
             data.push(binary(
                 11,
                 45 *
-                    alphanumeric_table(message[i])
+                    alphanumeric_table(message[i]) as u16
                     +
-                    alphanumeric_table(message[i + 1])));
+                    alphanumeric_table(message[i + 1]) as u16
+            ));
         }
 
-        if len & 1 == 1 { data.push(binary(6, alphanumeric_table(*message.last().unwrap()))); }
+        if len & 1 == 1 { data.push(binary(6, alphanumeric_table(*message.last().unwrap()) as u16)); }
 
         self.data = data.concat();
 

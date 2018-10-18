@@ -21,5 +21,6 @@ mod tests {
 
     #[test]
     fn test() {
+        println!("{}", 255 as char);
     }
 }

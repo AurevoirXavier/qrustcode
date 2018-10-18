@@ -1,7 +1,7 @@
-pub fn alphanumeric_table(b: u8) -> u16 {
+pub fn alphanumeric_table(b: u8) -> u8 {
     match b {
-        b'0'...b'9' => (b - 48) as u16, // 48 = b'0'
-        b'A'...b'Z' => (b - 55) as u16, // 55 = b'A' - 10
+        b'0'...b'9' => b - 48, // 48 = b'0'
+        b'A'...b'Z' => b - 55, // 55 = b'A' - 10
         b' ' => 36,
         b'$' => 37,
         b'%' => 38,
@@ -11,7 +11,7 @@ pub fn alphanumeric_table(b: u8) -> u16 {
         b'.' => 42,
         b'/' => 43,
         b':' => 44,
-        _ => panic!()
+        _ => 0
     }
 }
 
