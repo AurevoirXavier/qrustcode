@@ -42,8 +42,7 @@ impl Encoder {
         self.mode = match mode {
             "Numeric" => Mode::Numeric,
             "Alphanumeric" => Mode::Alphanumeric,
-            "ByteISO88591" => Mode::ByteISO88591,
-            "ByteUTF8" => Mode::ByteUTF8,
+            "Byte" => Mode::Byte,
             "Kanji" => Mode::Kanji,
             "Chinese" => Mode::Chinese,
             _ => panic!()

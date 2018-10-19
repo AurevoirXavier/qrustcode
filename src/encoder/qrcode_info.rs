@@ -31,12 +31,11 @@ pub fn alphanumeric_table(b: u8) -> u8 {
 //         27 ~ 40 -> 2
 //
 // mode:
-//     Numeric         -> 0
-//     Alphanumeric    -> 1
-//     Byte ISO 8859-1 -> 2
-//     Kanji           -> 3
-//     Chinese         -> 4
-//     Byte UTF-8      -> 5
+//     Numeric      -> 0
+//     Alphanumeric -> 1
+//     Byte         -> 2
+//     Kanji        -> 3
+//     Chinese      -> 4
 pub const INDICATORS: [[u8; 5]; 3] = [
     [10, 9, 8, 8, 8],
     [12, 11, 16, 10, 10],

@@ -13,7 +13,7 @@ impl Encoder {
         // reverse the order of Mode, we can pop() the most suitable mode at the end of the loop
         // modes[2] -> Byte mode(ISO 8859-1)
         // Byte mode (UTF-8) should be modes[0], but ignore it
-        let mut modes = vec![Chinese, Kanji, ByteISO88591, Alphanumeric, Numeric];
+        let mut modes = vec![Chinese, Kanji, Byte, Alphanumeric, Numeric];
 
         // check every char
         for c in message.chars() {
@@ -28,7 +28,7 @@ impl Encoder {
                     // -> modes is empty
                     // -> use Byte(UTF-8) mode
                     if fix == 4 {
-                        self.mode = ByteUTF8;
+                        self.mode = Byte;
                         return;
                     }
 
@@ -60,7 +60,7 @@ impl Encoder {
                     1 => 6,
                     _ => panic!()
                 },
-                Mode::ByteISO88591 | Mode::ByteUTF8 => 8 * len,
+                Mode::Byte => 8 * len,
                 Mode::Kanji | Mode::Chinese => 13 * len,
                 _ => panic!() // TODO
             };
@@ -135,7 +135,7 @@ impl Encoder {
         self
     }
 
-    fn byte_iso_8859_1_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
+    fn byte_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
         self.data = message.as_bytes()
             .into_iter()
             .map(|&byte| binary(8, byte as u16))
@@ -144,8 +144,6 @@ impl Encoder {
 
         self
     }
-
-    fn byte_utf_8_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
     fn kanji_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
@@ -158,10 +156,9 @@ impl Encoder {
         match self.mode {
             Mode::Numeric => self.numeric_encode(bits_count, message),
             Mode::Alphanumeric => self.alphanumeric_encode(bits_count, message),
-            Mode::ByteISO88591 => self.byte_iso_8859_1_encode(bits_count, message),
+            Mode::Byte => self.byte_encode(bits_count, message),
             Mode::Kanji => self.kanji_encode(bits_count, message),     // TODO
             Mode::Chinese => self.chinese_encode(bits_count, message), // TODO
-            Mode::ByteUTF8 => self.byte_utf_8_encode(bits_count, message),
             _ => panic!()
         }
             .decimal_data()

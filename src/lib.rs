@@ -16,10 +16,9 @@ mod tests {
 //            .version(1)
             .ec_level("M");
 
-        b.iter(|| (0..1).fold((), |_, _| encoder.encode("HELLO WORLD")));
+        b.iter(|| (0..1).fold((), |_, _| encoder.encode("一二")));
     }
 
     #[test]
-    fn test() {
-    }
+    fn test() {}
 }

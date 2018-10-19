@@ -3,8 +3,7 @@ pub enum Mode {
     Unknown,
     Numeric,
     Alphanumeric,
-    ByteISO88591,
-    ByteUTF8,
+    Byte,
     Kanji,
     Chinese,
 }
@@ -14,10 +13,9 @@ impl Mode {
         match self {
             Mode::Numeric => 0,
             Mode::Alphanumeric => 1,
-            Mode::ByteISO88591 => 2,
+            Mode::Byte => 2,
             Mode::Kanji => 3,
             Mode::Chinese => 4,
-            Mode::ByteUTF8 => 5,
             _ => panic!(),
         }
     }
@@ -29,7 +27,7 @@ impl Mode {
                 _ => true
             }
             Mode::Alphanumeric => if super::qrcode_info::alphanumeric_table(c as u8) == 0 { true } else { false }
-            Mode::ByteISO88591 => match c as u8 {
+            Mode::Byte => match c as u8 {
                 0...255 => true,
                 _ => false
             }
