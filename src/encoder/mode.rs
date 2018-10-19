@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub enum Mode {
     Unknown,
     Numeric,
@@ -6,6 +6,7 @@ pub enum Mode {
     Byte,
     Kanji,
     Chinese,
+    ECI,
 }
 
 impl Mode {
@@ -31,8 +32,8 @@ impl Mode {
                 0...255 => true,
                 _ => false
             }
-            Mode::Kanji => c < '\u{0800}' || c > '\u{4e00}',
-            Mode::Chinese => c < '\u{4e00}' || c > '\u{9fa5}',
+            Mode::Kanji => c < '\u{0800}' || c > '\u{4e00}',   //TODO range might not accurate
+            Mode::Chinese => c < '\u{4e00}' || c > '\u{9fa5}', //TODO range might not accurate
             _ => unreachable!()
         }
     }

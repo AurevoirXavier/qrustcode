@@ -16,7 +16,7 @@ mod tests {
 //            .version(1)
             .ec_level("M");
 
-        b.iter(|| (0..1).fold((), |_, _| encoder.encode("一二")));
+        b.iter(|| (0..1000).fold((), |_, _| encoder.encode("123一二三四五六七")));
     }
 
     #[test]

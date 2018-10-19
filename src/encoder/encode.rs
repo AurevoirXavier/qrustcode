@@ -8,7 +8,7 @@ impl Encoder {
     fn mode_detect(&mut self, message: &str) {
         use super::mode::Mode::*;
 
-        if self.mode != Unknown { return; }
+        if let Unknown = self.mode { () } else { return; }
 
         // reverse the order of Mode, we can pop() the most suitable mode at the end of the loop
         // modes[2] -> Byte mode(ISO 8859-1)
@@ -23,16 +23,13 @@ impl Encoder {
                 let i = i - fix;
                 if modes[i].not_support(c) {
                     modes.remove(i);
+                    fix += 1;
 
-                    //    when fix == mode.len() - 1
-                    // -> modes is empty
-                    // -> use Byte(UTF-8) mode
-                    if fix == 4 {
+                    // use Byte(UTF-8) mode
+                    if fix == modes.len() {
                         self.mode = Byte;
                         return;
                     }
-
-                    fix += 1;
                 }
             }
         }
@@ -92,19 +89,16 @@ impl Encoder {
     fn numeric_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
         let len = message.len();
         let edge = len / 3 * 3;
-        let mut data = vec![vec![0, 0, 0, 1]];
 
-        data.push(binary(bits_count, len as u16));
+        self.data = vec![0, 0, 0, 1];
+        self.data.extend_from_slice(binary(bits_count, len as u16).as_slice());
 
-        for i in (0..edge).step_by(3) { data.push(binary(10, message[i..i + 3].parse().unwrap())); }
-
+        for i in (0..edge).step_by(3) { self.data.extend_from_slice(binary(10, message[i..i + 3].parse().unwrap()).as_slice()); }
         match len - edge {
-            bits @ 1...2 => data.push(binary(1 + 3 * bits, message[edge..len].parse().unwrap())),
+            bits @ 1...2 => self.data.extend_from_slice(binary(1 + 3 * bits, message[edge..len].parse().unwrap()).as_slice()),
             0 => (),
             _ => panic!()
         }
-
-        self.data = data.concat();
 
         self
     }
@@ -114,40 +108,41 @@ impl Encoder {
 
         let message = message.as_bytes();
         let len = message.len();
-        let mut data = vec![vec![0, 0, 1, 0]];
 
-        data.push(binary(bits_count, len as u16));
+        self.data = vec![0, 0, 1, 0];
+        self.data.extend_from_slice(binary(bits_count, len as u16).as_slice());
 
         for i in (0..len >> 1 << 1).step_by(2) {
-            data.push(binary(
+            self.data.extend_from_slice(binary(
                 11,
                 45 *
                     alphanumeric_table(message[i]) as u16
                     +
                     alphanumeric_table(message[i + 1]) as u16,
-            ));
+            ).as_slice());
         }
-
-        if len & 1 == 1 { data.push(binary(6, alphanumeric_table(*message.last().unwrap()) as u16)); }
-
-        self.data = data.concat();
+        if len & 1 == 1 { self.data.extend_from_slice(binary(6, alphanumeric_table(*message.last().unwrap()) as u16).as_slice()); }
 
         self
     }
 
     fn byte_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
-        self.data = message.as_bytes()
-            .into_iter()
-            .map(|&byte| binary(8, byte as u16))
-            .flatten()
-            .collect();
+        self.data = vec![0, 1, 0, 0];
+        self.data.extend_from_slice(binary(bits_count, message.len() as u16).as_slice());
+
+        for &byte in message.as_bytes() { self.data.extend_from_slice(binary(8, byte as u16).as_slice()); }
 
         self
     }
 
-    fn kanji_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
+    fn kanji_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
+        self.data = vec![1, 0, 0, 0];
+        self.data.extend_from_slice(binary(bits_count, message.len() as u16).as_slice());
 
-    fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
+        self
+    }
+
+    fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self } // TODO
 
     pub fn encode(&mut self, message: &str) {
         self.mode_detect(message);
@@ -157,7 +152,7 @@ impl Encoder {
             Mode::Numeric => self.numeric_encode(bits_count, message),
             Mode::Alphanumeric => self.alphanumeric_encode(bits_count, message),
             Mode::Byte => self.byte_encode(bits_count, message),
-            Mode::Kanji => self.kanji_encode(bits_count, message),     // TODO
+            Mode::Kanji => self.kanji_encode(bits_count, message),
             Mode::Chinese => self.chinese_encode(bits_count, message), // TODO
             _ => panic!()
         }
