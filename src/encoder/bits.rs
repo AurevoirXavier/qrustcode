@@ -25,7 +25,10 @@ impl Encoder {
 
         let data = &mut self.data;
 
-        for _ in 0..12 - (4 + data.len()) % 8 { data.push(0); } // terminator
+        // terminator = 4
+        // 12 = 8 + terminator
+        // re = (4 + data.len()) % 8
+        for _ in 0..12 - (4 + data.len()) % 8 { data.push(0); }
 
         let re_cws = (CAPACITIES[self.version][self.ec_level] - data.len() as u16) / 8;
 

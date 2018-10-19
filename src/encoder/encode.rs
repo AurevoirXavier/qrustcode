@@ -135,7 +135,17 @@ impl Encoder {
         self
     }
 
-    fn byte_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
+    fn byte_iso_8859_1_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
+        self.data = message.as_bytes()
+            .into_iter()
+            .map(|&byte| binary(8, byte as u16))
+            .flatten()
+            .collect();
+
+        self
+    }
+
+    fn byte_utf_8_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
     fn kanji_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
@@ -148,16 +158,16 @@ impl Encoder {
         match self.mode {
             Mode::Numeric => self.numeric_encode(bits_count, message),
             Mode::Alphanumeric => self.alphanumeric_encode(bits_count, message),
-            Mode::ByteISO88591 => self.byte_encode(bits_count, message),    // TODO
-            Mode::Kanji => self.kanji_encode(bits_count, message),   // TODO
+            Mode::ByteISO88591 => self.byte_iso_8859_1_encode(bits_count, message),
+            Mode::Kanji => self.kanji_encode(bits_count, message),     // TODO
             Mode::Chinese => self.chinese_encode(bits_count, message), // TODO
-            Mode::ByteUTF8 => self.byte_encode(bits_count, message),    // TODO
+            Mode::ByteUTF8 => self.byte_utf_8_encode(bits_count, message),
             _ => panic!()
         }
             .decimal_data()
             .error_correction();
 
 //        println!("{}", self.version);
-        println!("{:?}", self.mode);
+//        println!("{:?}", self.mode);
     }
 }

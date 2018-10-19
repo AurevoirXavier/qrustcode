@@ -61,7 +61,7 @@ impl Encoder {
             }
         }
 
-        data.split_off(len);
+        println!("{:?}", data.split_off(len));
     }
 }
 
