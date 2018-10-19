@@ -1,43 +1,34 @@
 use super::{
     bits::binary,
+    mode::Mode,
     Encoder,
 };
 
 impl Encoder {
     fn mode_detect(&mut self, message: &str) {
-        if self.mode != 255 { return; }
+        use super::mode::Mode::*;
 
-        fn numeric(c: char) -> bool {
-            match c {
-                '0'...'9' => true,
-                _ => false
-            }
-        }
+        if self.mode != Unknown { return; }
 
-        fn alphanumeric(c: char) -> bool { if super::qrcode_info::alphanumeric_table(c as u8) == 0 { false } else { true } }
-
-        fn chinese(c: char) -> bool { if c <= '\u{4e00}' || c >= '\u{9fff}' { false } else { true } }
-
-        fn kanji(c: char) -> bool { if c <= '\u{0800}' || c >= '\u{4e00}' { false } else { true } }
-
-        let mut modes = vec![0, 1, 3, 4];
-        let mut fns = [numeric, alphanumeric, chinese, kanji, chinese];
+        // reverse the order of Mode, we can pop() the most suitable mode at the end of the loop
+        // modes[2] -> Byte mode(ISO 8859-1)
+        // Byte mode (UTF-8) should be modes[0], but ignore it
+        let mut modes = vec![Chinese, Kanji, ByteISO88591, Alphanumeric, Numeric];
 
         // check every char
         for c in message.chars() {
             let mut fix = 0;
-            // check every mode(remained)
+            // check every mode(remained) except Byte(UTF-8)
             for i in 0..modes.len() {
                 let i = i - fix;
-
-                if !fns[modes[i]](c) {
+                if modes[i].not_support(c) {
                     modes.remove(i);
 
                     //    when fix == mode.len() - 1
                     // -> modes is empty
                     // -> use Byte(UTF-8) mode
-                    if fix == 3 {
-                        self.mode = 2;
+                    if fix == 4 {
+                        self.mode = ByteUTF8;
                         return;
                     }
 
@@ -46,7 +37,7 @@ impl Encoder {
             }
         }
 
-        self.mode = modes[0] as u8;
+        self.mode = modes.pop().unwrap();
     }
 
     fn version_detect(&mut self, len: u16) -> usize {
@@ -56,7 +47,7 @@ impl Encoder {
             use super::qrcode_info::CAPACITIES;
 
             let mut total_bits = 4 + match self.mode {
-                0 => {
+                Mode::Numeric => {
                     10 * (len / 3) + match len % 3 {
                         0 => 0,
                         1 => 4,
@@ -64,24 +55,24 @@ impl Encoder {
                         _ => panic!()
                     }
                 }
-                1 => 11 * (len >> 1) + match len & 1 {
+                Mode::Alphanumeric => 11 * (len >> 1) + match len & 1 {
                     0 => 0,
                     1 => 6,
                     _ => panic!()
                 },
-                2 => 8 * len,
-                3 | 4 => 13 * len,
+                Mode::ByteISO88591 | Mode::ByteUTF8 => 8 * len,
+                Mode::Kanji | Mode::Chinese => 13 * len,
                 _ => panic!() // TODO
             };
 
             for (&(start, end), indicators) in [(0usize, 8usize), (9, 25), (26, 39)].iter().zip(INDICATORS.iter()) {
-                total_bits += indicators[self.mode as usize] as u16;
+                total_bits += indicators[self.mode.to_usize()] as u16;
 
                 if total_bits < CAPACITIES[end][self.ec_level] {
                     for version in start..=end {
                         if total_bits < CAPACITIES[version][self.ec_level] {
                             self.version = version;
-                            return indicators[self.mode as usize] as usize;
+                            return indicators[self.mode.to_usize()] as usize;
                         }
                     }
                 }
@@ -95,7 +86,7 @@ impl Encoder {
             9...25 => 1,
             26...39 => 2,
             _ => panic!()
-        }][self.mode as usize] as usize
+        }][self.mode.to_usize()] as usize
     }
 
     fn numeric_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
@@ -133,7 +124,7 @@ impl Encoder {
                 45 *
                     alphanumeric_table(message[i]) as u16
                     +
-                    alphanumeric_table(message[i + 1]) as u16
+                    alphanumeric_table(message[i + 1]) as u16,
             ));
         }
 
@@ -151,23 +142,22 @@ impl Encoder {
     fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self }
 
     pub fn encode(&mut self, message: &str) {
-        use super::qrcode_info::INDICATORS;
-
         self.mode_detect(message);
         let bits_count = self.version_detect(message.len() as u16);
 
         match self.mode {
-            0 => self.numeric_encode(bits_count, message),
-            1 => self.alphanumeric_encode(bits_count, message),
-            2 => self.byte_encode(bits_count, message),    // TODO
-            3 => self.kanji_encode(bits_count, message),   // TODO
-            4 => self.chinese_encode(bits_count, message), // TODO
+            Mode::Numeric => self.numeric_encode(bits_count, message),
+            Mode::Alphanumeric => self.alphanumeric_encode(bits_count, message),
+            Mode::ByteISO88591 => self.byte_encode(bits_count, message),    // TODO
+            Mode::Kanji => self.kanji_encode(bits_count, message),   // TODO
+            Mode::Chinese => self.chinese_encode(bits_count, message), // TODO
+            Mode::ByteUTF8 => self.byte_encode(bits_count, message),    // TODO
             _ => panic!()
         }
             .decimal_data()
             .error_correction();
 
-        println!("{}", self.version);
-//        println!("{}", self.mode);
+//        println!("{}", self.version);
+        println!("{:?}", self.mode);
     }
 }

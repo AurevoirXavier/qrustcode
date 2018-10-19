@@ -16,11 +16,11 @@ mod tests {
 //            .version(1)
             .ec_level("M");
 
-        b.iter(|| (0..1).fold((), |_, _| encoder.encode("我我我我我我我我我我我我我我")));
+        b.iter(|| (0..1).fold((), |_, _| encoder.encode("一二")));
     }
 
     #[test]
     fn test() {
-        println!("{}", 255 as char);
+        println!("{}", '\u{6211}' < '\u{0800}' );
     }
 }
