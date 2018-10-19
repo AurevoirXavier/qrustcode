@@ -1,19 +1,15 @@
 mod bits;
 mod matrix;
+mod mode;
 mod encode;
 mod error_correct;
 mod qrcode_info;
 
+use self::mode::Mode;
+
 pub struct Encoder {
     data: Vec<u8>,
-
-    // mode:
-    //     Numeric      -> 0
-    //     Alphanumeric -> 1
-    //     Byte         -> 2
-    //     Kanji        -> 3
-    //     Chinese      -> 4
-    mode: u8,
+    mode: Mode,
 
     // version:
     //     micro_mode:
@@ -36,7 +32,7 @@ impl Encoder {
     pub fn new() -> Encoder {
         Encoder {
             data: vec![],
-            mode: 255,
+            mode: Mode::Unknown,
             version: 255,
             ec_level: 0,
         }
@@ -44,11 +40,12 @@ impl Encoder {
 
     pub fn mode(mut self, mode: &str) -> Encoder {
         self.mode = match mode {
-            "Numeric" => 0,
-            "Alphanumeric" => 1,
-            "Byte" => 2,
-            "Kanji" => 3,
-            "Chinese" => 4,
+            "Numeric" => Mode::Numeric,
+            "Alphanumeric" => Mode::Alphanumeric,
+            "ByteISO88591" => Mode::ByteISO88591,
+            "ByteUTF8" => Mode::ByteUTF8,
+            "Kanji" => Mode::Kanji,
+            "Chinese" => Mode::Chinese,
             _ => panic!()
         };
 
