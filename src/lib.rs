@@ -20,5 +20,9 @@ mod tests {
     }
 
     #[test]
-    fn test() {}
+    fn test() {
+        println!("{:?}", "の".as_bytes().to_vec());
+        println!("{}", '\u{935f}');
+        println!("{}", '点'.escape_unicode());
+    }
 }
