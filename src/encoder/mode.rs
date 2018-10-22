@@ -6,7 +6,7 @@ pub enum Mode {
     Byte,
     Kanji,
     Chinese,
-    ECI,
+//    ECI, // TODO
 }
 
 impl Mode {

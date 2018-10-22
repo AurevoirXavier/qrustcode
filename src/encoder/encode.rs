@@ -74,7 +74,7 @@ impl Encoder {
         self
     }
 
-    fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self } // TODO
+//    fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self } // TODO
 
     pub fn encode(&mut self, message: &str) {
         use super::mode::Mode::*;
@@ -87,12 +87,11 @@ impl Encoder {
             Alphanumeric => self.alphanumeric_encode(bits_count, message),
             Byte => self.byte_encode(bits_count, message),
             Kanji => self.kanji_encode(bits_count, message),
-            Chinese => self.chinese_encode(bits_count, message), // TODO
+//            Chinese => self.chinese_encode(bits_count, message), // TODO
             _ => panic!()
         }
             .decimal_data()
-//            .groups()
-            .error_correction();
+            .final_structure();
 
 //        println!("{}", self.version);
 //        println!("{:?}", self.mode);

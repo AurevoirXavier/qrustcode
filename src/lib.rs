@@ -24,7 +24,7 @@ mod tests {
     #[test]
     fn test() {
         use encoding_rs::SHIFT_JIS;
-        let (c, e, b) = SHIFT_JIS.encode("茗");
+        let (c, _, _) = SHIFT_JIS.encode("茗");
         println!("{:?}", c.to_vec());
     }
 }

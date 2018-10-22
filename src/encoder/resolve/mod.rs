@@ -1,3 +1,3 @@
 mod auto_detect;
-mod block_distribute;
+mod final_structure;
 mod error_correct;
