@@ -136,8 +136,22 @@ impl Encoder {
     }
 
     fn kanji_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
+        use encoding_rs::SHIFT_JIS;
+
         self.data = vec![1, 0, 0, 0];
         self.data.extend_from_slice(binary(bits_count, message.len() as u16).as_slice());
+
+        let (message, _, _) = SHIFT_JIS.encode(message);
+        for kanji in message.chunks(2) {
+            // "茗" -- Shift JIS value --> 0xe4aa
+            // 0xe4aa - 0xc140 = 0x236a => {
+            //     0x236a >> 8 = 0x23
+            //     0x236a & 0xff = 0x6a
+            // } => (0x23 * 0xc0 = 0x1a40) + 0x6a = 0x1aaa = 0b1101010101010
+            let shift_jis_value = kanji[0] as u16 * 256 + kanji[1] as u16;
+            let decimal = if shift_jis_value < 0xe040 { shift_jis_value - 0x8140 } else { shift_jis_value - 0xc140 };
+            self.data.extend_from_slice(binary(13, (decimal >> 8) * 0xc0 + (decimal & 0xff)).as_slice());
+        }
 
         self
     }

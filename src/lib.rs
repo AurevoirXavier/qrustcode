@@ -1,4 +1,6 @@
 #![feature(test)]
+
+extern crate encoding_rs;
 extern crate test;
 
 mod encoder;
@@ -12,17 +14,17 @@ mod tests {
     fn encoder_test(b: &mut Bencher) {
         use self::encoder::Encoder;
         let mut encoder = Encoder::new()
-//            .mode("Alphanumeric")
-//            .version(1)
+//            .mode("Kanji")
+//            .version(2)
             .ec_level("M");
 
-        b.iter(|| (0..1000).fold((), |_, _| encoder.encode("123一二三四五六七")));
+        b.iter(|| (0..1).fold((), |_, _| encoder.encode("ハロー・ワールド")));
     }
 
     #[test]
     fn test() {
-        println!("{:?}", "の".as_bytes().to_vec());
-        println!("{}", '\u{935f}');
-        println!("{}", '点'.escape_unicode());
+        use encoding_rs::SHIFT_JIS;
+        let (c, e, b) = SHIFT_JIS.encode("茗");
+        println!("{:?}", c.to_vec());
     }
 }
