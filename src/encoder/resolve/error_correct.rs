@@ -1,8 +1,8 @@
-use super::Encoder;
+use crate::encoder::Encoder;
 
 impl Encoder {
-    pub fn error_correction(&mut self) {
-        use super::qrcode_info::EC_CW_PER_BLOCKS;
+    pub fn error_correction(&mut self) -> &mut Encoder {
+        use crate::encoder::qrcode_info::EC_CW_PER_BLOCKS;
 
         let ec_cw_per_block = EC_CW_PER_BLOCKS[self.version][self.ec_level];
         let generator_polynomial: &[u8] = match ec_cw_per_block {
@@ -61,6 +61,7 @@ impl Encoder {
             }
         }
 
+        self
 //        println!("{:?}", data.split_off(len));
     }
 }

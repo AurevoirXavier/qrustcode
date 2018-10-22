@@ -92,7 +92,7 @@ pub const EC_CW_PER_BLOCKS: [[u8; 4]; 40] = [
 // ]
 //
 // version, ec_level: same as above
-pub const DATA_DISTRIBUTION: [[[u8; 4]; 4]; 40] = [
+pub const DATA_DISTRIBUTIONS: [[[u8; 4]; 4]; 40] = [
     [[1, 19, 0, 0], [1, 16, 0, 0], [1, 13, 0, 0], [1, 9, 0, 0]],
     [[1, 34, 0, 0], [1, 28, 0, 0], [1, 22, 0, 0], [1, 16, 0, 0]],
     [[1, 55, 0, 0], [1, 44, 0, 0], [2, 17, 0, 0], [2, 13, 0, 0]],

@@ -32,8 +32,8 @@ impl Mode {
                 0...255 => true,
                 _ => false
             }
-            Mode::Kanji => c < '\u{0800}' || c > '\u{4e00}',   //TODO range might not accurate
-            Mode::Chinese => c < '\u{4e00}' || c > '\u{9fa5}', //TODO range might not accurate
+            Mode::Kanji => c < '\u{0800}' || c > '\u{4e00}',   // TODO range might not accurate
+            Mode::Chinese => c < '\u{4e00}' || c > '\u{9fa5}', // TODO range might not accurate
             _ => unreachable!()
         }
     }

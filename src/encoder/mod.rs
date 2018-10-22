@@ -2,8 +2,8 @@ mod bits;
 mod matrix;
 mod mode;
 mod encode;
-mod error_correct;
 mod qrcode_info;
+mod resolve;
 
 use self::mode::Mode;
 
