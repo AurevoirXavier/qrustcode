@@ -42,4 +42,14 @@ impl Encoder {
 
         self
     }
+
+    pub fn binary_data(&mut self) -> &mut Encoder {
+        let mut data = vec![];
+
+        for decimal in self.data.iter() { data.extend_from_slice(binary(8, *decimal as u16).as_slice()) }
+
+        self.data = data;
+
+        self
+    }
 }

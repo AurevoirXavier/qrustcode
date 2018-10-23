@@ -45,8 +45,18 @@ impl Encoder {
 
         let g1_blocks_num = data_distribution[0];
         let g2_blocks_num = data_distribution[2];
+
+        if g1_blocks_num + g2_blocks_num == 1 {
+            self.data.extend_from_slice(error_correct(
+                self.data.clone(),
+                ec_cw_per_blocks
+            ).as_slice());
+
+            return self;
+        }
+
         let g1_cw_per_block = data_distribution[1] as usize;
-        let g2_cw_per_block = data_distribution[3] as usize;
+        let g2_cw_per_block = g1_cw_per_block + 1;
 
         let data = self.data.clone();
         let final_data = thread::spawn(move || {
