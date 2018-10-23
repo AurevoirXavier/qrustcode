@@ -44,11 +44,15 @@ impl Encoder {
     }
 
     pub fn binary_data(&mut self) -> &mut Encoder {
+        use crate::encoder::qrcode_info::remainder_bits;
+        
         let mut data = vec![];
-
+        
         for decimal in self.data.iter() { data.extend_from_slice(binary(8, *decimal as u16).as_slice()) }
-
+        for _ in 0..remainder_bits(self.version) { self.data.push(0); }
+        
         self.data = data;
+        
 
         self
     }
