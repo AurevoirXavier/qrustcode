@@ -9,6 +9,14 @@ use self::mode::Mode;
 
 pub struct Encoder {
     data: Vec<u8>,
+
+    // ec_levels:
+    //     L -> 0
+    //     M -> 1
+    //     Q -> 2
+    //     H -> 3
+    ec_level: usize,
+
     mode: Mode,
 
     // version:
@@ -19,22 +27,15 @@ pub struct Encoder {
     //         10 ~ 26 -> 1
     //         27 ~ 40 -> 2
     version: usize,
-
-    // ec_levels:
-    //     L -> 0
-    //     M -> 1
-    //     Q -> 2
-    //     H -> 3
-    ec_level: usize,
 }
 
 impl Encoder {
     pub fn new() -> Encoder {
         Encoder {
             data: vec![],
+            ec_level: 0,
             mode: Mode::Unknown,
             version: 255,
-            ec_level: 0,
         }
     }
 
