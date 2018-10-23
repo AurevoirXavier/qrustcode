@@ -46,6 +46,7 @@ impl Encoder {
         let g1_blocks_num = data_distribution[0];
         let g2_blocks_num = data_distribution[2];
 
+        // smaller QR codes only consist of one block of data codewords
         if g1_blocks_num + g2_blocks_num == 1 {
             self.data.extend_from_slice(error_correct(
                 self.data.clone(),
