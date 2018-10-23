@@ -15,6 +15,15 @@ pub fn alphanumeric_table(b: u8) -> u8 {
     }
 }
 
+pub fn remainder_bits(version: usize) -> u8 {
+    match version {
+        2...6 => 7,
+        14...20 | 28...34 => 3,
+        21...27 => 4,
+        _ => 0
+    }
+}
+
 // Number of bits in character count indicator for QR Code
 //
 // INDICATORS's index        -> version
