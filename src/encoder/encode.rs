@@ -1,6 +1,6 @@
 use super::{
-    bits::binary,
     Encoder,
+    bits::binary,
 };
 
 impl Encoder {
@@ -91,7 +91,8 @@ impl Encoder {
             _ => panic!()
         }
             .decimal_data()
-            .final_structure();
+            .interleave_with_ec()
+            .binary_data();
 
 //        println!("{}", self.version);
 //        println!("{:?}", self.mode);

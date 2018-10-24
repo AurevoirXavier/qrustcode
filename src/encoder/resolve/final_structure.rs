@@ -1,4 +1,7 @@
-use crate::encoder::Encoder;
+use crate::encoder::{
+    Encoder,
+    matrix::Matrix
+};
 
 fn gen_indexes(from: &mut usize, step: usize, count: u8) -> Vec<usize> {
     let mut indexes = vec![];
@@ -35,7 +38,7 @@ fn test() {
 }
 
 impl Encoder {
-    fn interleave(&mut self) -> &mut Encoder {
+    pub fn interleave_with_ec(&mut self) -> &mut Encoder {
         use std::thread;
         use super::error_correct::error_correct;
         use crate::encoder::qrcode_info::{DATA_DISTRIBUTIONS, EC_CW_PER_BLOCKS};
@@ -128,7 +131,5 @@ impl Encoder {
         self
     }
 
-    pub fn final_structure(&mut self) {
-        self.interleave();
-    }
+    pub fn into_matrix(self) -> Matrix { Matrix::new(self.data, self.version) }
 }

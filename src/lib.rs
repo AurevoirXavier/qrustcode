@@ -1,6 +1,8 @@
 #![feature(test)]
 
 extern crate encoding_rs;
+//extern crate image;
+
 extern crate test;
 
 mod encoder;
