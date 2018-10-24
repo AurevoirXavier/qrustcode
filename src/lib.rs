@@ -20,9 +20,22 @@ mod tests {
 //            .version(2)
             .ec_level("M");
 
-        b.iter(|| (0..1).fold((), |_, _| encoder.encode("ハロー・ワールド")));
+        b.iter(|| (0..1).fold((), |_, _| {
+            encoder
+                .encode("ハロー・ワールド")
+                .as_matrix();
+        }));
     }
 
     #[test]
-    fn test() {}
+    fn test() {
+        use self::encoder::Encoder;
+
+        let mut encoder = Encoder::new()
+            .ec_level("M")
+            .encode("ハロー・ワールド")
+            .as_matrix();
+
+//        println!("{:?}", );
+    }
 }

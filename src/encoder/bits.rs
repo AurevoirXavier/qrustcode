@@ -1,6 +1,6 @@
 use super::Encoder;
 
-pub fn push_binary(binary: &mut Vec<u8>, mut bits_count: usize, mut num: u16) {
+pub fn push_binary(binary: &mut Vec<u8>, bits_count: usize, mut num: u16) {
     let mut len = binary.len() + bits_count;
 
     binary.resize(len, 0);

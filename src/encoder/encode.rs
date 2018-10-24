@@ -78,7 +78,7 @@ impl Encoder {
 
 //    fn chinese_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder { self } // TODO
 
-    pub fn encode(&mut self, message: &str) {
+    pub fn encode(&mut self, message: &str) -> &mut Encoder {
         use super::mode::Mode::*;
 
         self.mode_detect(message);
@@ -94,9 +94,6 @@ impl Encoder {
         }
             .decimal_data()
             .interleave_with_ec()
-            .binary_data();
-
-//        println!("{}", self.version);
-//        println!("{:?}", self.mode);
+            .binary_data()
     }
 }
