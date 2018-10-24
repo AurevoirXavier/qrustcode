@@ -1,6 +1,6 @@
 use super::{
     Encoder,
-    bits::binary,
+    bits::push_binary,
 };
 
 impl Encoder {
@@ -9,11 +9,11 @@ impl Encoder {
         let edge = len / 3 * 3;
 
         self.data = vec![0, 0, 0, 1];
-        self.data.extend_from_slice(binary(bits_count, len as u16).as_slice());
+        push_binary(&mut self.data, bits_count, len as u16);
 
-        for i in (0..edge).step_by(3) { self.data.extend_from_slice(binary(10, message[i..i + 3].parse().unwrap()).as_slice()); }
+        for i in (0..edge).step_by(3) { push_binary(&mut self.data, 10, message[i..i + 3].parse().unwrap()); }
         match len - edge {
-            bits @ 1...2 => self.data.extend_from_slice(binary(1 + 3 * bits, message[edge..len].parse().unwrap()).as_slice()),
+            bits @ 1...2 => push_binary(&mut self.data, 1 + 3 * bits, message[edge..len].parse().unwrap()),
             0 => (),
             _ => panic!()
         }
@@ -28,27 +28,28 @@ impl Encoder {
         let len = message.len();
 
         self.data = vec![0, 0, 1, 0];
-        self.data.extend_from_slice(binary(bits_count, len as u16).as_slice());
+        push_binary(&mut self.data, bits_count, len as u16);
 
         for i in (0..len >> 1 << 1).step_by(2) {
-            self.data.extend_from_slice(binary(
+            push_binary(
+                &mut self.data,
                 11,
                 45 *
                     alphanumeric_table(message[i]) as u16
                     +
                     alphanumeric_table(message[i + 1]) as u16,
-            ).as_slice());
+            );
         }
-        if len & 1 == 1 { self.data.extend_from_slice(binary(6, alphanumeric_table(*message.last().unwrap()) as u16).as_slice()); }
+        if len & 1 == 1 { push_binary(&mut self.data, 6, alphanumeric_table(message[len]) as u16); }
 
         self
     }
 
     fn byte_encode(&mut self, bits_count: usize, message: &str) -> &mut Encoder {
         self.data = vec![0, 1, 0, 0];
-        self.data.extend_from_slice(binary(bits_count, message.len() as u16).as_slice());
+        push_binary(&mut self.data, bits_count, message.len() as u16);
 
-        for &byte in message.as_bytes() { self.data.extend_from_slice(binary(8, byte as u16).as_slice()); }
+        for byte in message.as_bytes() { push_binary(&mut self.data, 8, *byte as u16); }
 
         self
     }
@@ -57,7 +58,7 @@ impl Encoder {
         use encoding_rs::SHIFT_JIS;
 
         self.data = vec![1, 0, 0, 0];
-        self.data.extend_from_slice(binary(bits_count, message.len() as u16).as_slice());
+        push_binary(&mut self.data, bits_count, message.len() as u16);
 
         let (message, _, _) = SHIFT_JIS.encode(message);
         for kanji in message.chunks(2) {
@@ -68,7 +69,8 @@ impl Encoder {
             // } => (0x23 * 0xc0 = 0x1a40) + 0x6a = 0x1aaa = 0b1101010101010
             let shift_jis_value = kanji[0] as u16 * 256 + kanji[1] as u16;
             let decimal = if shift_jis_value < 0xe040 { shift_jis_value - 0x8140 } else { shift_jis_value - 0xc140 };
-            self.data.extend_from_slice(binary(13, (decimal >> 8) * 0xc0 + (decimal & 0xff)).as_slice());
+
+            push_binary(&mut self.data, 13, (decimal >> 8) * 0xc0 + (decimal & 0xff));
         }
 
         self

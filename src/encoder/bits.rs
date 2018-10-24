@@ -1,14 +1,23 @@
-pub fn binary(mut bits_count: usize, mut num: u16) -> Vec<u8> {
-    let mut binary = vec![];
-    binary.resize(bits_count, 0);
+use super::Encoder;
+
+pub fn push_binary(binary: &mut Vec<u8>, mut bits_count: usize, mut num: u16) {
+    let mut len = binary.len() + bits_count;
+
+    binary.resize(len, 0);
 
     while num != 0 {
-        bits_count -= 1;
-        binary[bits_count] = (num & 1) as u8;
+        len -= 1;
+        binary[len] = (num & 1) as u8;
         num >>= 1;
     }
+}
 
-    binary
+#[test]
+fn test() {
+    let mut binary = vec![1, 0, 0, 1];
+    push_binary(&mut binary, 8, 13);
+
+    assert_eq!(binary, vec![1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1]);
 }
 
 pub fn decimal(binary: &[u8]) -> u8 {
@@ -18,7 +27,6 @@ pub fn decimal(binary: &[u8]) -> u8 {
     decimal
 }
 
-use super::Encoder;
 impl Encoder {
     pub fn decimal_data(&mut self) -> &mut Encoder {
         use super::qrcode_info::CAPACITIES;
@@ -44,15 +52,17 @@ impl Encoder {
     }
 
     pub fn binary_data(&mut self) -> &mut Encoder {
+        use std::mem::swap;
         use crate::encoder::qrcode_info::remainder_bits;
-        
-        let mut data = vec![];
-        
-        for decimal in self.data.iter() { data.extend_from_slice(binary(8, *decimal as u16).as_slice()) }
+
+        {
+            let mut data = vec![];
+            swap(&mut self.data, &mut data);
+
+            for decimal in data.into_iter() { push_binary(&mut self.data, 8, decimal as u16); }
+        }
+
         for _ in 0..remainder_bits(self.version) { self.data.push(0); }
-        
-        self.data = data;
-        
 
         self
     }
