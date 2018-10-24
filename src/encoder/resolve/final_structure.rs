@@ -5,7 +5,6 @@ use crate::encoder::{
 
 fn gen_indexes(from: &mut usize, step: usize, count: u8) -> Vec<usize> {
     let mut indexes = vec![];
-
     for _ in 0..count {
         indexes.push(*from);
         *from += step;
@@ -21,10 +20,9 @@ fn test() {
     let g1_cw_per_block = 15;
     let g2_cw_per_block = 16;
 
-    let mut indexes = {
+    let indexes = {
         let mut i = 0;
         let mut indexes = gen_indexes(&mut i, g1_cw_per_block, g1_blocks_num);
-
         indexes.extend_from_slice(gen_indexes(
             &mut i,
             g2_cw_per_block,
@@ -131,5 +129,5 @@ impl Encoder {
         self
     }
 
-    pub fn into_matrix(self) -> Matrix { Matrix::new(self.data, self.version) }
+    pub fn as_matrix(&self) -> Matrix { Matrix::new(&self.data, self.version) }
 }
