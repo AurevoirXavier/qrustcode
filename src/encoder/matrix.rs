@@ -21,7 +21,7 @@ fn add_finder_patterns(matrix: &mut Vec<Vec<u8>>) {
 }
 
 #[test]
-fn test() {
+fn test_add_finder_patterns() {
     let mut matrix = {
         let mut matrix = vec![];
         let mut row = vec![];
@@ -69,9 +69,81 @@ fn test() {
 fn add_alignment_patterns(matrix: &mut Vec<Vec<u8>>, version: usize) {
     use crate::encoder::qrcode_info::ALIGNMENT_PATTERN_LOCATIONS;
 
-    if version != 1 { return; }
+    if version == 1 { return; }
 
-    let locations = ALIGNMENT_PATTERN_LOCATIONS[version];
+    // index from 0 and only 39 versions in array -> version - 2
+    let locations = ALIGNMENT_PATTERN_LOCATIONS[version - 2];
+
+    for &y in locations.iter() {
+        for &x in locations.iter() {
+            if matrix[x as usize][y as usize] == 1 { continue; }
+
+            // get top left module coordinate
+            let (i, j) = (x as usize - 2, y as usize - 2);
+
+            for y in 0..5 {
+                for x in 0..5 {
+                    matrix[x + i][y + j] = match x {
+                        1...3 => match y {
+                            1...3 => 0,
+                            _ => 1
+                        }
+                        _ => 1
+                    }
+                }
+            }
+
+            // center module
+            matrix[x as usize][y as usize] = 1;
+        }
+    }
+}
+
+#[test]
+fn test_add_alignment_patterns() {
+    let mut matrix = {
+        let mut matrix = vec![];
+        let mut row = vec![];
+
+        row.resize(25, 2);
+        matrix.resize(25, row);
+
+        matrix
+    };
+
+    add_finder_patterns(&mut matrix);
+    add_alignment_patterns(&mut matrix, 2);
+
+    assert_eq!(
+        matrix.into_iter()
+            .map(|row| row.into_iter()
+                .map(|state| if state == 1 { '■' } else { ' ' })
+                .collect::<String>()
+            ).collect::<Vec<String>>()
+            .join("\n"),
+        [
+            "\
+            ■■■■■■■           ■■■■■■■\n\
+            ■     ■           ■     ■\n\
+            ■ ■■■ ■           ■ ■■■ ■\n\
+            ■ ■■■ ■           ■ ■■■ ■\n\
+            ■ ■■■ ■           ■ ■■■ ■\n\
+            ■     ■           ■     ■\n\
+            ■■■■■■■           ■■■■■■■\n",
+            "                         \n".repeat(9).as_str(),
+            "                ■■■■■    \n",
+            "                ■   ■    \n",
+            "■■■■■■■         ■ ■ ■    \n\
+            ■     ■         ■   ■    \n\
+            ■ ■■■ ■         ■■■■■    \n\
+            ■ ■■■ ■                  \n\
+            ■ ■■■ ■                  \n\
+            ■     ■                  \n\
+            ■■■■■■■                  \
+            "
+        ].join("")
+            .to_string()
+    )
 }
 
 pub struct Matrix<'a> {
