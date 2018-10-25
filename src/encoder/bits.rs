@@ -13,7 +13,7 @@ pub fn push_binary(binary: &mut Vec<u8>, bits_count: usize, mut num: u16) {
 }
 
 #[test]
-fn test() {
+fn test_push_binary() {
     let mut binary = vec![1, 0, 0, 1];
     push_binary(&mut binary, 8, 13);
 

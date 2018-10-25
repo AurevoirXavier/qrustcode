@@ -14,7 +14,7 @@ fn gen_indexes(from: &mut usize, step: usize, count: u8) -> Vec<usize> {
 }
 
 #[test]
-fn test() {
+fn test_gen_indexes() {
     let g1_blocks_num = 2;
     let g2_blocks_num = 2;
     let g1_cw_per_block = 15;
