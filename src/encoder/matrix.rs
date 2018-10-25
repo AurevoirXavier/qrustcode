@@ -1,4 +1,4 @@
-fn add_finder_patterns(matrix: &mut Vec<Vec<bool>>) {
+fn add_finder_patterns(matrix: &mut Vec<Vec<u8>>) {
     let top_left_corner = matrix.len() - 7;
 
     for (i, j) in [(0, 0), (top_left_corner, 0), (0, top_left_corner)].iter() {
@@ -6,20 +6,19 @@ fn add_finder_patterns(matrix: &mut Vec<Vec<bool>>) {
             for x in 0..7 {
                 matrix[x + i][y + j] = match x {
                     1 | 5 => match y {
-                        1...5 => continue,
-                        _ => true
+                        1...5 => 0,
+                        _ => 1
                     }
                     2...4 => match y {
-                        1 | 5 => continue,
-                        _ => true
+                        1 | 5 => 0,
+                        _ => 1
                     }
-                    _ => true
+                    _ => 1
                 };
             }
         }
     }
 }
-
 
 #[test]
 fn test() {
@@ -27,7 +26,7 @@ fn test() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(21, false);
+        row.resize(21, 2);
         matrix.resize(21, row);
 
         matrix
@@ -38,7 +37,7 @@ fn test() {
     assert_eq!(
         matrix.into_iter()
             .map(|row| row.into_iter()
-                .map(|flag| if flag { '■' } else { ' ' })
+                .map(|state| if state == 1 { '■' } else { ' ' })
                 .collect::<String>()
             ).collect::<Vec<String>>()
             .join("\n"),
@@ -67,14 +66,28 @@ fn test() {
     )
 }
 
+fn add_alignment_patterns(matrix: &mut Vec<Vec<u8>>, version: usize) {
+    use crate::encoder::qrcode_info::ALIGNMENT_PATTERN_LOCATIONS;
+
+    if version != 1 { return; }
+
+    let locations = ALIGNMENT_PATTERN_LOCATIONS[version];
+}
+
 pub struct Matrix<'a> {
     bits: &'a Vec<u8>,
-    matrix: Vec<Vec<bool>>,
+
+    // state: u8
+    // 0 -> 0
+    // 1 -> 1
+    // 2 -> unused
+    matrix: Vec<Vec<u8>>,
 }
 
 impl<'a> Matrix<'a> {
-    fn build_matrix(&mut self) {
+    fn build_matrix(&mut self, version: usize) {
         add_finder_patterns(&mut self.matrix);
+        add_alignment_patterns(&mut self.matrix, version);
     }
 
     pub fn new(data: &Vec<u8>, version: usize) -> Matrix {
@@ -85,14 +98,14 @@ impl<'a> Matrix<'a> {
                 let mut matrix = vec![];
                 let mut row = vec![];
 
-                row.resize(size, false);
+                row.resize(size, 2);
                 matrix.resize(size, row);
 
                 matrix
             },
         };
 
-        matrix.build_matrix();
+        matrix.build_matrix(version);
 
         matrix
     }
