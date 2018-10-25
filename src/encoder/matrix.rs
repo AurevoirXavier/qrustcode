@@ -4,29 +4,22 @@ fn add_finder_patterns(matrix: &mut Vec<Vec<bool>>) {
     for (i, j) in [(0, 0), (top_left_corner, 0), (0, top_left_corner)].iter() {
         for y in 0..7 {
             for x in 0..7 {
-                match x {
+                matrix[x + i][y + j] = match x {
                     1 | 5 => match y {
                         1...5 => continue,
-                        _ => ()
+                        _ => true
                     }
-                    _ => ()
-                }
-
-                match y {
-                    1 | 5 => {
-                        match x {
-                            2...4 => continue,
-                            _ => ()
-                        }
+                    2...4 => match y {
+                        1 | 5 => continue,
+                        _ => true
                     }
-                    _ => ()
-                }
-
-                matrix[x + i][y + j] = true;
+                    _ => true
+                };
             }
         }
     }
 }
+
 
 #[test]
 fn test() {
