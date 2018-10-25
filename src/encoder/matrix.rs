@@ -1,5 +1,3 @@
-fn add_timing_patterns(matrix: &mut Vec<Vec<u8>>) {}
-
 // state: u8
 // 0 -> 0
 // 1 -> 1
@@ -27,6 +25,39 @@ impl Matrix {
                     };
                 }
             }
+        }
+
+        self
+    }
+
+    fn add_separators(&mut self) -> &mut Matrix {
+        let Matrix(matrix) = self;
+        let len = matrix.len();
+        let fix = matrix.len() - 8;
+
+        for i in 0..8 {
+            // top left
+            // horizontal
+            matrix[7][i] = 0;
+            // vertical
+            matrix[i][7] = 0;
+
+            // vertical
+            matrix[i][fix] = 0;
+
+            // bottom left
+            // horizontal
+            matrix[fix][i] = 0;
+        }
+
+        for i in fix..len {
+            // top right
+            // horizontal
+            matrix[7][i] = 0;
+
+            // bottom left
+            // vertical
+            matrix[i][7] = 0;
         }
 
         self
@@ -68,6 +99,22 @@ impl Matrix {
         self
     }
 
+    fn add_timing_patterns(&mut self) -> &mut Matrix {
+        let Matrix(matrix) = self;
+        let fix = matrix.len() - 8;
+        let mut timing_pattern = [1, 1, 0, 0].iter().cycle();
+
+        for i in 8..fix {
+            // horizontal
+            matrix[6][i] = *timing_pattern.next().unwrap();
+
+            // vertical
+            matrix[i][6] = *timing_pattern.next().unwrap();
+        };
+
+        self
+    }
+
     pub fn new(data: &Vec<u8>, version: usize) -> Matrix {
         let mut matrix = Matrix({
             let size = version * 4 + 17;
@@ -80,7 +127,11 @@ impl Matrix {
             matrix
         });
 
-//        matrix;
+        matrix
+            .add_finder_patterns()
+            .add_separators()
+            .add_alignment_patterns(version)
+            .add_timing_patterns();
 
         matrix
     }
@@ -103,33 +154,83 @@ fn test_add_finder_patterns() {
     assert_eq!(
         matrix.0.iter()
             .map(|row| row.iter()
-                .map(|state| if state == &1 { '■' } else { ' ' })
-                .collect::<String>()
+                .map(|state| match state {
+                    0 => '□',
+                    1 => '■',
+                    _ => ' '
+                }).collect::<String>()
             ).collect::<Vec<String>>()
             .join("\n"),
         [
             "\
             ■■■■■■■       ■■■■■■■\n\
-            ■     ■       ■     ■\n\
-            ■ ■■■ ■       ■ ■■■ ■\n\
-            ■ ■■■ ■       ■ ■■■ ■\n\
-            ■ ■■■ ■       ■ ■■■ ■\n\
-            ■     ■       ■     ■\n\
-            ■■■■■■■       ■■■■■■■\n\
-            ",
+            ■□□□□□■       ■□□□□□■\n\
+            ■□■■■□■       ■□■■■□■\n\
+            ■□■■■□■       ■□■■■□■\n\
+            ■□■■■□■       ■□■■■□■\n\
+            ■□□□□□■       ■□□□□□■\n\
+            ■■■■■■■       ■■■■■■■\n",
             "                     \n".repeat(7).as_str(),
-            "\
-            ■■■■■■■              \n\
-            ■     ■              \n\
-            ■ ■■■ ■              \n\
-            ■ ■■■ ■              \n\
-            ■ ■■■ ■              \n\
-            ■     ■              \n\
-            ■■■■■■■              \
-            "
+            "■■■■■■■              \n\
+            ■□□□□□■              \n\
+            ■□■■■□■              \n\
+            ■□■■■□■              \n\
+            ■□■■■□■              \n\
+            ■□□□□□■              \n\
+            ■■■■■■■              "
         ].join("")
             .to_string()
-    )
+    );
+}
+
+#[test]
+fn test_add_separators() {
+    let mut matrix = Matrix({
+        let mut matrix = vec![];
+        let mut row = vec![];
+
+        row.resize(21, 2);
+        matrix.resize(21, row);
+
+        matrix
+    });
+
+    matrix
+        .add_finder_patterns()
+        .add_separators();
+
+    assert_eq!(
+        matrix.0.iter()
+            .map(|row| row.iter()
+                .map(|state|  match state {
+                    0 => '□',
+                    1 => '■',
+                    _ => ' '
+                }).collect::<String>()
+            ).collect::<Vec<String>>()
+            .join("\n"),
+        [
+            "\
+            ■■■■■■■□     □■■■■■■■\n\
+            ■□□□□□■□     □■□□□□□■\n\
+            ■□■■■□■□     □■□■■■□■\n\
+            ■□■■■□■□     □■□■■■□■\n\
+            ■□■■■□■□     □■□■■■□■\n\
+            ■□□□□□■□     □■□□□□□■\n\
+            ■■■■■■■□     □■■■■■■■\n\
+            □□□□□□□□     □□□□□□□□\n",
+            "                     \n".repeat(5).as_str(),
+            "□□□□□□□□             \n\
+            ■■■■■■■□             \n\
+            ■□□□□□■□             \n\
+            ■□■■■□■□             \n\
+            ■□■■■□■□             \n\
+            ■□■■■□■□             \n\
+            ■□□□□□■□             \n\
+            ■■■■■■■□             "
+        ].join("")
+            .to_string()
+    );
 }
 
 #[test]
@@ -146,36 +247,100 @@ fn test_add_alignment_patterns() {
 
     matrix
         .add_finder_patterns()
+        .add_separators()
         .add_alignment_patterns(2);
 
     assert_eq!(
         matrix.0.iter()
             .map(|row| row.iter()
-                .map(|state| if state == &1 { '■' } else { ' ' })
-                .collect::<String>()
+                .map(|state|  match state {
+                    0 => '□',
+                    1 => '■',
+                    _ => ' '
+                }).collect::<String>()
             ).collect::<Vec<String>>()
             .join("\n"),
         [
             "\
-            ■■■■■■■           ■■■■■■■\n\
-            ■     ■           ■     ■\n\
-            ■ ■■■ ■           ■ ■■■ ■\n\
-            ■ ■■■ ■           ■ ■■■ ■\n\
-            ■ ■■■ ■           ■ ■■■ ■\n\
-            ■     ■           ■     ■\n\
-            ■■■■■■■           ■■■■■■■\n",
-            "                         \n".repeat(9).as_str(),
+            ■■■■■■■□         □■■■■■■■\n\
+            ■□□□□□■□         □■□□□□□■\n\
+            ■□■■■□■□         □■□■■■□■\n\
+            ■□■■■□■□         □■□■■■□■\n\
+            ■□■■■□■□         □■□■■■□■\n\
+            ■□□□□□■□         □■□□□□□■\n\
+            ■■■■■■■□         □■■■■■■■\n\
+            □□□□□□□□         □□□□□□□□\n",
+            "                         \n".repeat(8).as_str(),
             "                ■■■■■    \n",
-            "                ■   ■    \n",
-            "■■■■■■■         ■ ■ ■    \n\
-            ■     ■         ■   ■    \n\
-            ■ ■■■ ■         ■■■■■    \n\
-            ■ ■■■ ■                  \n\
-            ■ ■■■ ■                  \n\
-            ■     ■                  \n\
-            ■■■■■■■                  \
-            "
+            "□□□□□□□□        ■□□□■    \n",
+            "■■■■■■■□        ■□■□■    \n\
+            ■□□□□□■□        ■□□□■    \n\
+            ■□■■■□■□        ■■■■■    \n\
+            ■□■■■□■□                 \n\
+            ■□■■■□■□                 \n\
+            ■□□□□□■□                 \n\
+            ■■■■■■■□                 "
         ].join("")
             .to_string()
-    )
+    );
+}
+
+#[test]
+fn test_add_timing_patterns() {
+    let mut matrix = Matrix({
+        let mut matrix = vec![];
+        let mut row = vec![];
+
+        row.resize(25, 2);
+        matrix.resize(25, row);
+
+        matrix
+    });
+
+    matrix
+        .add_finder_patterns()
+        .add_separators()
+        .add_alignment_patterns(2)
+        .add_timing_patterns();
+
+    assert_eq!(
+        matrix.0.iter()
+            .map(|row| row.iter()
+                .map(|state|  match state {
+                    0 => '□',
+                    1 => '■',
+                    _ => ' '
+                }).collect::<String>()
+            ).collect::<Vec<String>>()
+            .join("\n"),
+        [
+            "\
+            ■■■■■■■□         □■■■■■■■\n\
+            ■□□□□□■□         □■□□□□□■\n\
+            ■□■■■□■□         □■□■■■□■\n\
+            ■□■■■□■□         □■□■■■□■\n\
+            ■□■■■□■□         □■□■■■□■\n\
+            ■□□□□□■□         □■□□□□□■\n\
+            ■■■■■■■□■□■□■□■□■□■■■■■■■\n\
+            □□□□□□□□         □□□□□□□□\n",
+            "      ■                  \n",
+            "      □                  \n",
+            "      ■                  \n",
+            "      □                  \n",
+            "      ■                  \n",
+            "      □                  \n",
+            "      ■                  \n",
+            "      □                  \n",
+            "      ■         ■■■■■    \n",
+            "□□□□□□□□        ■□□□■    \n",
+            "■■■■■■■□        ■□■□■    \n\
+            ■□□□□□■□        ■□□□■    \n\
+            ■□■■■□■□        ■■■■■    \n\
+            ■□■■■□■□                 \n\
+            ■□■■■□■□                 \n\
+            ■□□□□□■□                 \n\
+            ■■■■■■■□                 "
+        ].join("")
+            .to_string()
+    );
 }
