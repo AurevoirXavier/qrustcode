@@ -134,7 +134,14 @@ impl Matrix {
         matrix[fix][8] = 1;
 
         if version > 6 {
-            // TODO
+            for i in fix - 3..fix {
+                for j in 0..6 {
+                    // top-right
+                    matrix[i][j] = 2;
+                    // bottom-left
+                    matrix[j][i] = 2;
+                }
+            }
         }
 
         self
@@ -375,6 +382,7 @@ fn test_add_timing_patterns() {
 
 #[test]
 fn test_add_dark_module_and_reserved_areas() {
+    // version 2
     let mut matrix = Matrix({
         let mut matrix = vec![];
         let mut row = vec![];
@@ -433,4 +441,15 @@ fn test_add_dark_module_and_reserved_areas() {
         ].join("")
             .to_string()
     );
+
+    // version 7
+    let mut matrix = Matrix({
+        let mut matrix = vec![];
+        let mut row = vec![];
+
+        row.resize(46, 3);
+        matrix.resize(46, row);
+
+        matrix
+    });
 }
