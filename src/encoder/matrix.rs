@@ -452,4 +452,21 @@ fn test_add_dark_module_and_reserved_areas() {
 
         matrix
     });
+
+    assert_eq!(
+        matrix.0.iter()
+            .map(|row| row.iter()
+                .map(|state| match state {
+                    0 => '□',
+                    1 => '■',
+                    2 => '○',
+                    _ => ' '
+                }).collect::<String>()
+            ).collect::<Vec<String>>()
+            .join("\n"),
+        [
+
+        ].join("")
+            .to_string()
+    );
 }
