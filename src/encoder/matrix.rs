@@ -147,6 +147,10 @@ impl Matrix {
         self
     }
 
+    fn place_data(&mut self) -> &mut Matrix {
+        self
+    }
+
     pub fn new(data: &Vec<u8>, version: usize) -> Matrix {
         let mut matrix = Matrix({
             let size = version * 4 + 17;
