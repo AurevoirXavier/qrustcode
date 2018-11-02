@@ -154,7 +154,7 @@ impl Matrix {
         let mut upward = true;
 
         for x in (0..len).rev().step_by(2) {
-            // timing pattern
+            // avoid timing pattern
             if x == 6 { continue; }
 
             let range = if upward { (0..len).rev() } else { 0..len };
@@ -546,8 +546,14 @@ fn test_add_dark_module_and_reserved_areas() {
 }
 
 #[test]
-fn testtest() {
-    for x in (7..45).rev().step_by(2) {
-        println!("{}", x);
-    }
+fn test_place_data() {
+    let mut matrix = Matrix({
+        let mut matrix = vec![];
+        let mut row = vec![];
+
+        row.resize(45, 3);
+        matrix.resize(45, row);
+
+        matrix
+    });
 }
