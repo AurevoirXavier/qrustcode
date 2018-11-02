@@ -147,7 +147,25 @@ impl Matrix {
         self
     }
 
-    fn place_data(&mut self) -> &mut Matrix {
+    fn place_data(&mut self, data: &Vec<u8>) -> &mut Matrix {
+        let Matrix(matrix) = self;
+        let len = matrix.len();
+        let mut data = data.iter();
+        let mut upward = true;
+
+        for x in (0..len).rev().step_by(2) {
+            // timing pattern
+            if x == 6 { continue; }
+
+            let range = if upward { (0..len).rev() } else { 0..len };
+            for y in range {
+                if matrix[y][x] == 3 { matrix[y][x] = *data.next().unwrap(); }
+                if matrix[y][x - 1] == 3 { matrix[y][x - 1] = *data.next().unwrap()); }
+            }
+
+            upward = !upward;
+        }
+
         self
     }
 
@@ -525,4 +543,11 @@ fn test_add_dark_module_and_reserved_areas() {
         ].join("")
             .to_string()
     );
+}
+
+#[test]
+fn testtest() {
+    for x in (7..45).rev().step_by(2) {
+        println!("{}", x);
+    }
 }
