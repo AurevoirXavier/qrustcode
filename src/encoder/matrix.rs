@@ -153,15 +153,21 @@ impl Matrix {
         let mut data = data.iter();
         let mut upward = true;
 
-        for x in (0..len).rev().step_by(2) {
+        'outer: for x in (0..len).rev().step_by(2) {
             // avoid timing pattern
             if x == 6 { continue; }
 
-            let range = if upward { (0..len).rev() } else { 0..len };
-            for y in range {
-                if matrix[y][x] == 3 { matrix[y][x] = *data.next().unwrap(); }
-                if matrix[y][x - 1] == 3 { matrix[y][x - 1] = *data.next().unwrap()); }
-            }
+            if upward {
+                for y in (0..len).rev() {
+                    if matrix[y][x] == 3 { if let Some(&bit) = data.next() { matrix[y][x] = bit; } else { break 'outer; } }
+                    if matrix[y][x - 1] == 3 { if let Some(&bit) = data.next() { matrix[y][x - 1] = bit; } else { break 'outer; } }
+                }
+            } else {
+                for y in 0..len {
+                    if matrix[y][x] == 3 { if let Some(&bit) = data.next() { matrix[y][x] = bit; } else { break 'outer; } }
+                    if matrix[y][x - 1] == 3 { if let Some(&bit) = data.next() { matrix[y][x - 1] = bit; } else { break 'outer; } }
+                }
+            };
 
             upward = !upward;
         }
@@ -551,9 +557,64 @@ fn test_place_data() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(45, 3);
-        matrix.resize(45, row);
+        row.resize(25, 3);
+        matrix.resize(25, row);
 
         matrix
     });
+
+    let mut data = vec![];
+    for _ in 0..2 {
+        data.extend_from_slice(&[1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1]);
+    }
+
+    matrix
+        .add_finder_patterns()
+        .add_separators()
+        .add_alignment_patterns(2)
+        .add_timing_patterns()
+        .add_dark_module_and_reserved_areas(2)
+        .place_data(&data);
+
+    assert_eq!(
+        matrix.0.iter()
+            .map(|row| row.iter()
+                .map(|state| match state {
+                    0 => '□',
+                    1 => '■',
+                    2 => '○',
+                    _ => ' '
+                }).collect::<String>()
+            ).collect::<Vec<String>>()
+            .join("\n"),
+        [
+            "\
+            ■■■■■■■□○        □■■■■■■■\n\
+            ■□□□□□■□○        □■□□□□□■\n\
+            ■□■■■□■□○        □■□■■■□■\n\
+            ■□■■■□■□○        □■□■■■□■\n\
+            ■□■■■□■□○        □■□■■■□■\n\
+            ■□□□□□■□○        □■□□□□□■\n\
+            ■■■■■■■□■□■□■□■□■□■■■■■■■\n\
+            □□□□□□□□○        □□□□□□□□\n\
+            ○○○○○○■○○        ○○○○○○○○\n",
+            "      □              □■□■\n",
+            "      ■              □■□■\n",
+            "      □              ■■■■\n",
+            "      ■                □□\n",
+            "      □                □□\n",
+            "      ■                ■□\n",
+            "      □                ■■\n",
+            "      ■         ■■■■■  ■□\n\
+            □□□□□□□□■       ■□□□■  ■□\n\
+            ■■■■■■■□○       ■□■□■  ■□\n\
+            ■□□□□□■□○       ■□□□■  ■□\n\
+            ■□■■■□■□○       ■■■■■  ■■\n\
+            ■□■■■□■□○              ■□\n\
+            ■□■■■□■□○              □□\n\
+            ■□□□□□■□○              □■\n\
+            ■■■■■■■□○              □■"
+        ].join("")
+            .to_string()
+    )
 }
