@@ -1,8 +1,10 @@
 // state: u8
 // 0 -> 0
 // 1 -> 1
-// 2 -> reserved
-// 3 -> unused
+// 2 -> function module 0
+// 3 -> function module 1
+// 4 -> reserved
+// 5 -> unused
 pub struct Matrix(Vec<Vec<u8>>);
 
 impl Matrix {
@@ -15,14 +17,14 @@ impl Matrix {
                 for x in 0..7 {
                     matrix[x + i][y + j] = match x {
                         1 | 5 => match y {
-                            1...5 => 0,
-                            _ => 1
+                            1...5 => 2,
+                            _ => 3
                         }
                         2...4 => match y {
-                            1 | 5 => 0,
-                            _ => 1
+                            1 | 5 => 2,
+                            _ => 3
                         }
-                        _ => 1
+                        _ => 3
                     };
                 }
             }
@@ -38,19 +40,19 @@ impl Matrix {
 
         for i in 0..8 {
             // top left
-            matrix[7][i] = 0; // horizontal
-            matrix[i][7] = 0; // vertical
+            matrix[7][i] = 2; // horizontal
+            matrix[i][7] = 2; // vertical
             // top right
-            matrix[i][fix] = 0; // vertical
+            matrix[i][fix] = 2; // vertical
             // bottom left
-            matrix[fix][i] = 0; // horizontal
+            matrix[fix][i] = 2; // horizontal
         }
 
         for i in fix..len {
             // top right
-            matrix[7][i] = 0; // horizontal
+            matrix[7][i] = 2; // horizontal
             // bottom left
-            matrix[i][7] = 0; // vertical
+            matrix[i][7] = 2; // vertical
         }
 
         self
@@ -67,7 +69,7 @@ impl Matrix {
 
         for &y in locations.iter() {
             for &x in locations.iter() {
-                if matrix[x as usize][y as usize] == 1 { continue; }
+                if matrix[x as usize][y as usize] == 3 { continue; }
 
                 // get top left module coordinate
                 let (i, j) = (x as usize - 2, y as usize - 2);
@@ -76,16 +78,16 @@ impl Matrix {
                     for x in 0..5 {
                         matrix[x + i][y + j] = match x {
                             1...3 => match y {
-                                1...3 => 0,
-                                _ => 1
+                                1...3 => 2,
+                                _ => 3
                             }
-                            _ => 1
+                            _ => 3
                         }
                     }
                 }
 
                 // center module
-                matrix[x as usize][y as usize] = 1;
+                matrix[x as usize][y as usize] = 3;
             }
         }
 
@@ -95,7 +97,7 @@ impl Matrix {
     fn add_timing_patterns(&mut self) -> &mut Matrix {
         let Matrix(matrix) = self;
         let fix = matrix.len() - 8;
-        let mut timing_pattern = [1, 1, 0, 0].iter().cycle();
+        let mut timing_pattern = [3, 3, 2, 2].iter().cycle();
 
         for i in 8..fix {
             // horizontal
@@ -115,31 +117,31 @@ impl Matrix {
         // reserved areas
         for i in 0..9 {
             // horizontal
-            matrix[8][i] = 2;
+            matrix[8][i] = 4;
             // vertical
-            matrix[i][8] = 2;
+            matrix[i][8] = 4;
         }
 
         for i in fix..len {
             // horizontal
-            matrix[8][i] = 2;
+            matrix[8][i] = 4;
             // vertical
-            matrix[i][8] = 2;
+            matrix[i][8] = 4;
         }
 
         // avoid timing pattern
-        matrix[6][8] = 1;
-        matrix[8][6] = 1;
+        matrix[6][8] = 3;
+        matrix[8][6] = 3;
         // avoid dark module
-        matrix[fix][8] = 1;
+        matrix[fix][8] = 3;
 
         if version > 6 {
             for i in fix - 3..fix {
                 for j in 0..6 {
                     // top-right
-                    matrix[i][j] = 2;
+                    matrix[i][j] = 4;
                     // bottom-left
-                    matrix[j][i] = 2;
+                    matrix[j][i] = 4;
                 }
             }
         }
@@ -152,24 +154,25 @@ impl Matrix {
         let len = matrix.len();
         let mut data = data.iter();
         let mut upward = true;
+        let mut x = len - 1;
 
-        'outer: for x in (0..len).rev().step_by(2) {
-            // avoid timing pattern
-            if x == 6 { continue; }
-
+        'outer: while len != 0 {
             if upward {
                 for y in (0..len).rev() {
-                    if matrix[y][x] == 3 { if let Some(&bit) = data.next() { matrix[y][x] = bit; } else { break 'outer; } }
-                    if matrix[y][x - 1] == 3 { if let Some(&bit) = data.next() { matrix[y][x - 1] = bit; } else { break 'outer; } }
+                    if matrix[y][x] == 5 { if let Some(&bit) = data.next() { matrix[y][x] = bit; } else { break 'outer; } }
+                    if matrix[y][x - 1] == 5 { if let Some(&bit) = data.next() { matrix[y][x - 1] = bit; } else { break 'outer; } }
                 }
             } else {
                 for y in 0..len {
-                    if matrix[y][x] == 3 { if let Some(&bit) = data.next() { matrix[y][x] = bit; } else { break 'outer; } }
-                    if matrix[y][x - 1] == 3 { if let Some(&bit) = data.next() { matrix[y][x - 1] = bit; } else { break 'outer; } }
+                    if matrix[y][x] == 5 { if let Some(&bit) = data.next() { matrix[y][x] = bit; } else { break 'outer; } }
+                    if matrix[y][x - 1] == 5 { if let Some(&bit) = data.next() { matrix[y][x - 1] = bit; } else { break 'outer; } }
                 }
             };
 
             upward = !upward;
+
+            // avoid timing pattern
+            if x == 8 { x -= 3; } else { x -= 2; }
         }
 
         self
@@ -181,7 +184,7 @@ impl Matrix {
             let mut matrix = vec![];
             let mut row = vec![];
 
-            row.resize(size, 3);
+            row.resize(size, 5);
             matrix.resize(size, row);
 
             matrix
@@ -204,7 +207,7 @@ fn test_add_finder_patterns() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(21, 3);
+        row.resize(21, 5);
         matrix.resize(21, row);
 
         matrix
@@ -216,8 +219,8 @@ fn test_add_finder_patterns() {
         matrix.0.iter()
             .map(|row| row.iter()
                 .map(|state| match state {
-                    0 => '□',
-                    1 => '■',
+                    2 => '□',
+                    3 => '■',
                     _ => ' '
                 }).collect::<String>()
             ).collect::<Vec<String>>()
@@ -251,7 +254,7 @@ fn test_add_separators() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(21, 3);
+        row.resize(21, 5);
         matrix.resize(21, row);
 
         matrix
@@ -265,8 +268,8 @@ fn test_add_separators() {
         matrix.0.iter()
             .map(|row| row.iter()
                 .map(|state| match state {
-                    0 => '□',
-                    1 => '■',
+                    2 => '□',
+                    3 => '■',
                     _ => ' '
                 }).collect::<String>()
             ).collect::<Vec<String>>()
@@ -302,7 +305,7 @@ fn test_add_alignment_patterns() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(25, 3);
+        row.resize(25, 5);
         matrix.resize(25, row);
 
         matrix
@@ -317,8 +320,8 @@ fn test_add_alignment_patterns() {
         matrix.0.iter()
             .map(|row| row.iter()
                 .map(|state| match state {
-                    0 => '□',
-                    1 => '■',
+                    2 => '□',
+                    3 => '■',
                     _ => ' '
                 }).collect::<String>()
             ).collect::<Vec<String>>()
@@ -354,7 +357,7 @@ fn test_add_timing_patterns() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(25, 3);
+        row.resize(25, 5);
         matrix.resize(25, row);
 
         matrix
@@ -370,8 +373,8 @@ fn test_add_timing_patterns() {
         matrix.0.iter()
             .map(|row| row.iter()
                 .map(|state| match state {
-                    0 => '□',
-                    1 => '■',
+                    2 => '□',
+                    3 => '■',
                     _ => ' '
                 }).collect::<String>()
             ).collect::<Vec<String>>()
@@ -415,7 +418,7 @@ fn test_add_dark_module_and_reserved_areas() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(25, 3);
+        row.resize(25, 5);
         matrix.resize(25, row);
 
         matrix
@@ -432,9 +435,9 @@ fn test_add_dark_module_and_reserved_areas() {
         matrix.0.iter()
             .map(|row| row.iter()
                 .map(|state| match state {
-                    0 => '□',
-                    1 => '■',
-                    2 => '○',
+                    2 => '□',
+                    3 => '■',
+                    4 => '○',
                     _ => ' '
                 }).collect::<String>()
             ).collect::<Vec<String>>()
@@ -475,7 +478,7 @@ fn test_add_dark_module_and_reserved_areas() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(45, 3);
+        row.resize(45, 5);
         matrix.resize(45, row);
 
         matrix
@@ -492,9 +495,9 @@ fn test_add_dark_module_and_reserved_areas() {
         matrix.0.iter()
             .map(|row| row.iter()
                 .map(|state| match state {
-                    0 => '□',
-                    1 => '■',
-                    2 => '○',
+                    2 => '□',
+                    3 => '■',
+                    4 => '○',
                     _ => ' '
                 }).collect::<String>()
             ).collect::<Vec<String>>()
@@ -557,14 +560,14 @@ fn test_place_data() {
         let mut matrix = vec![];
         let mut row = vec![];
 
-        row.resize(25, 3);
+        row.resize(25, 5);
         matrix.resize(25, row);
 
         matrix
     });
 
     let mut data = vec![];
-    for _ in 0..2 {
+    for _ in 0..18 {
         data.extend_from_slice(&[1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1]);
     }
 
@@ -580,40 +583,42 @@ fn test_place_data() {
         matrix.0.iter()
             .map(|row| row.iter()
                 .map(|state| match state {
-                    0 => '□',
-                    1 => '■',
-                    2 => '○',
+                    0 => '0',
+                    1 => '1',
+                    2 => '□',
+                    3 => '■',
+                    4 => '○',
                     _ => ' '
                 }).collect::<String>()
             ).collect::<Vec<String>>()
             .join("\n"),
         [
             "\
-            ■■■■■■■□○        □■■■■■■■\n\
-            ■□□□□□■□○        □■□□□□□■\n\
-            ■□■■■□■□○        □■□■■■□■\n\
-            ■□■■■□■□○        □■□■■■□■\n\
-            ■□■■■□■□○        □■□■■■□■\n\
-            ■□□□□□■□○        □■□□□□□■\n\
+            ■■■■■■■□○01111110□■■■■■■■\n\
+            ■□□□□□■□○01011010□■□□□□□■\n\
+            ■□■■■□■□○00010010□■□■■■□■\n\
+            ■□■■■□■□○10010010□■□■■■□■\n\
+            ■□■■■□■□○11011111□■□■■■□■\n\
+            ■□□□□□■□○10110110□■□□□□□■\n\
             ■■■■■■■□■□■□■□■□■□■■■■■■■\n\
-            □□□□□□□□○        □□□□□□□□\n\
-            ○○○○○○■○○        ○○○○○○○○\n",
-            "      □              □■□■\n",
-            "      ■              □■□■\n",
-            "      □              ■■■■\n",
-            "      ■                □□\n",
-            "      □                □□\n",
-            "      ■                ■□\n",
-            "      □                ■■\n",
-            "      ■         ■■■■■  ■□\n\
-            □□□□□□□□■       ■□□□■  ■□\n\
-            ■■■■■■■□○       ■□■□■  ■□\n\
-            ■□□□□□■□○       ■□□□■  ■□\n\
-            ■□■■■□■□○       ■■■■■  ■■\n\
-            ■□■■■□■□○              ■□\n\
-            ■□■■■□■□○              □□\n\
-            ■□□□□□■□○              □■\n\
-            ■■■■■■■□○              □■"
+            □□□□□□□□○10000100□□□□□□□□\n\
+            ○○○○○○■○○10000101○○○○○○○○\n",
+            "   111□001010010110110101\n",
+            "  1001■001111111110100101\n",
+            "  1001□101010010110001111\n",
+            "  1001■110010010110010100\n",
+            "  1001□100010000111010100\n",
+            "  1111■101110100110110010\n",
+            "  1001□100111111100011011\n",
+            "  0001■100110100■■■■■1110\n\
+            □□□□□□□□■0100100■□□□■1010\n\
+            ■■■■■■■□○0101100■□■□■1010\n\
+            ■□□□□□■□○1101100■□□□■1010\n\
+            ■□■■■□■□○0111111■■■■■1011\n\
+            ■□■■■□■□○0101100100011110\n\
+            ■□■■■□■□○0001001111011000\n\
+            ■□□□□□■□○1001000101010001\n\
+            ■■■■■■■□○1101110101110001"
         ].join("")
             .to_string()
     )
