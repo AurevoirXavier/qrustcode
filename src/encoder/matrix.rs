@@ -181,6 +181,10 @@ impl Matrix {
         self
     }
 
+    fn data_mask(&mut self) -> &mut Matrix {
+        unimplemented!()
+    }
+
     pub fn new(data: &Vec<u8>, version: usize) -> Matrix {
         let mut matrix = Matrix({
             let size = version * 4 + 17;
