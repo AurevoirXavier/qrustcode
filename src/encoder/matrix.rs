@@ -181,6 +181,29 @@ impl Matrix {
         self
     }
 
+    fn eval_condition_1(matrix: &[&[u8]]) -> u32 {
+        let mut penalty = 0;
+        for row in matrix {
+            let mut count = 0u8;
+            let mut prev_module = &row[0];
+            for module in row.iter() {
+                if module == prev_module {
+                    count += 1;
+                    if count == 5 { penalty += 3; } else if count > 5 { penalty += 1; }
+                } else {
+                    prev_module = module;
+                    count = 1;
+                }
+            }
+        }
+
+        penalty
+    }
+
+    fn eval_condition_2(matrix: &[&[u8]]) -> u8 {
+        unimplemented!()
+    }
+
     fn data_mask(&mut self) -> &mut Matrix {
         unimplemented!()
     }
@@ -628,4 +651,12 @@ fn test_place_data() {
         ].join("")
             .to_string()
     )
+}
+
+#[test]
+fn test_eval_condition_1() {
+    assert_eq!(Matrix::eval_condition_1(&[
+        &[1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+        &[1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    ]), 16)
 }

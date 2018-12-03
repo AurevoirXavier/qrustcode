@@ -1,29 +1,3 @@
-pub fn alphanumeric_table(b: u8) -> u8 {
-    match b {
-        b'0'...b'9' => b - 48, // 48 = b'0'
-        b'A'...b'Z' => b - 55, // 55 = b'A' - 10
-        b' ' => 36,
-        b'$' => 37,
-        b'%' => 38,
-        b'*' => 39,
-        b'+' => 40,
-        b'-' => 41,
-        b'.' => 42,
-        b'/' => 43,
-        b':' => 44,
-        _ => 0
-    }
-}
-
-pub fn remainder_bits(version: usize) -> u8 {
-    match version {
-        2...6 => 7,
-        14...20 | 28...34 => 3,
-        21...27 => 4,
-        _ => 0
-    }
-}
-
 // Number of bits in character count indicator for QR Code
 //
 // INDICATORS's index        -> version
@@ -192,4 +166,30 @@ lazy_static! {
         &[6, 26, 54, 82, 110, 138, 166],
         &[6, 30, 58, 86, 114, 142, 170],
     ];  
+}
+
+pub fn alphanumeric_table(b: u8) -> u8 {
+    match b {
+        b'0'...b'9' => b - 48, // 48 = b'0'
+        b'A'...b'Z' => b - 55, // 55 = b'A' - 10
+        b' ' => 36,
+        b'$' => 37,
+        b'%' => 38,
+        b'*' => 39,
+        b'+' => 40,
+        b'-' => 41,
+        b'.' => 42,
+        b'/' => 43,
+        b':' => 44,
+        _ => 0
+    }
+}
+
+pub fn remainder_bits(version: usize) -> u8 {
+    match version {
+        2...6 => 7,
+        14...20 | 28...34 => 3,
+        21...27 => 4,
+        _ => 0
+    }
 }
