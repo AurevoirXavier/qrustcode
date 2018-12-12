@@ -1,11 +1,19 @@
 // state: u8
-// 0 -> 0
-// 1 -> 1
-// 2 -> function module 0
-// 3 -> function module 1
-// 4 -> reserved
-// 5 -> unused
+// 0 -> 0 normal module
+// 1 -> 1 normal module
+// 2 -> 0 function module
+// 3 -> 1 function module
+// 4 -> 0 reserved module
+// 5 -> 0 unused module
 pub struct Matrix(Vec<Vec<u8>>);
+
+
+fn normalize_module(module: u8) -> u8 {
+    match module {
+        1 | 3 => 1,
+        _ => 0,
+    }
+}
 
 impl Matrix {
     fn add_finder_patterns(&mut self) -> &mut Matrix {
@@ -17,8 +25,8 @@ impl Matrix {
                 for x in 0..7 {
                     matrix[x + i][y + j] = match x {
                         1 | 5 => match y {
-                            1...5 => 2,
-                            _ => 3
+                            0 => 3,
+                            _ => 2,
                         }
                         2...4 => match y {
                             1 | 5 => 2,
@@ -183,16 +191,33 @@ impl Matrix {
 
     fn eval_condition_1(matrix: &[&[u8]]) -> u32 {
         let mut penalty = 0;
-        for row in matrix {
-            let mut count = 0u8;
-            let mut prev_module = &row[0];
-            for module in row.iter() {
-                if module == prev_module {
-                    count += 1;
-                    if count == 5 { penalty += 3; } else if count > 5 { penalty += 1; }
+
+        let edge = matrix.len();
+        for i in 0..edge {
+            let mut count_x = 1u8;
+            let mut prev_module_x = normalize_module(matrix[i][0]);
+            let mut count_y = 1u8;
+            let mut prev_module_y = normalize_module(matrix[0][i]);
+
+            for j in 1..edge {
+                // horizontal
+                let module = normalize_module(matrix[i][j]);
+                if module == prev_module_x {
+                    count_x += 1;
+                    if count_x == 5 { penalty += 3; } else if count_x > 5 { penalty += 1; }
                 } else {
-                    prev_module = module;
-                    count = 1;
+                    prev_module_x = module;
+                    count_x = 1;
+                }
+
+                // vertical
+                let module = normalize_module(matrix[j][i]);
+                if module == prev_module_y {
+                    count_y += 1;
+                    if count_y == 5 { penalty += 3; } else if count_y > 5 { penalty += 1; }
+                } else {
+                    prev_module_y = module;
+                    count_y = 1;
                 }
             }
         }
@@ -200,8 +225,28 @@ impl Matrix {
         penalty
     }
 
-    fn eval_condition_2(matrix: &[&[u8]]) -> u8 {
-        unimplemented!()
+    fn eval_condition_2(matrix: &[&[u8]]) -> u32 {
+        let mut penalty = 0;
+
+        let edge = matrix.len() - 1;
+        for y in 0..edge {
+            for x in 0..edge {
+                let top_left = normalize_module(matrix[y][x]);
+
+                let top_right = normalize_module(matrix[y][x + 1]);
+                if top_left != top_right { continue; }
+
+                let bottom_left = normalize_module(matrix[y + 1][x]);
+                if top_left != bottom_left { continue; }
+
+                let bottom_right = normalize_module(matrix[y + 1][x + 1]);
+                if top_left != bottom_right { continue; }
+
+                penalty += 3;
+            }
+        }
+
+        penalty
     }
 
     fn data_mask(&mut self) -> &mut Matrix {
@@ -650,13 +695,65 @@ fn test_place_data() {
             ■■■■■■■□○1101110101110001"
         ].join("")
             .to_string()
-    )
+    );
 }
 
 #[test]
 fn test_eval_condition_1() {
-    assert_eq!(Matrix::eval_condition_1(&[
-        &[1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
-        &[1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-    ]), 16)
+    assert_eq!(
+        Matrix::eval_condition_1(&[
+            &[3, 3, 3, 3, 3, 3, 3, 4, 1, 1, 0, 0, 0, 4, 3, 3, 3, 3, 3, 3, 3],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 1, 0, 0, 1, 0, 4, 3, 2, 2, 2, 2, 2, 3],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 0, 1, 1, 4, 3, 2, 3, 3, 3, 2, 3],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 0, 0, 0, 4, 3, 2, 3, 3, 3, 2, 3],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 1, 0, 0, 4, 3, 2, 3, 3, 3, 2, 3],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 0, 0, 1, 0, 0, 4, 3, 2, 2, 2, 2, 2, 3],
+            &[3, 3, 3, 3, 3, 3, 3, 4, 3, 2, 3, 2, 3, 4, 3, 3, 3, 3, 3, 3, 3],
+            &[4, 4, 4, 4, 4, 4, 4, 4, 1, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4],
+            &[0, 1, 1, 0, 1, 0, 3, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1],
+            &[0, 1, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+            &[0, 0, 1, 1, 0, 1, 3, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
+            &[0, 1, 1, 0, 1, 1, 2, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0],
+            &[1, 0, 0, 0, 1, 0, 3, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+            &[4, 4, 4, 4, 4, 4, 4, 4, 3, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+            &[3, 3, 3, 3, 3, 3, 3, 4, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1],
+            &[3, 3, 3, 3, 3, 3, 3, 4, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+        ]),
+        180
+    );
+}
+
+#[test]
+fn test_eval_condition_2() {
+    assert_eq!(
+        Matrix::eval_condition_2(&[
+            &[3, 3, 3, 3, 3, 3, 3, 4, 1, 1, 0, 0, 0, 4, 3, 3, 3, 3, 3, 3, 3],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 1, 0, 0, 1, 0, 4, 3, 2, 2, 2, 2, 2, 3],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 0, 1, 1, 4, 3, 2, 3, 3, 3, 2, 3],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 0, 0, 0, 4, 3, 2, 3, 3, 3, 2, 3],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 1, 0, 0, 4, 3, 2, 3, 3, 3, 2, 3],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 0, 0, 1, 0, 0, 4, 3, 2, 2, 2, 2, 2, 3],
+            &[3, 3, 3, 3, 3, 3, 3, 4, 3, 2, 3, 2, 3, 4, 3, 3, 3, 3, 3, 3, 3],
+            &[4, 4, 4, 4, 4, 4, 4, 4, 1, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4],
+            &[0, 1, 1, 0, 1, 0, 3, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1],
+            &[0, 1, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+            &[0, 0, 1, 1, 0, 1, 3, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
+            &[0, 1, 1, 0, 1, 1, 2, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0],
+            &[1, 0, 0, 0, 1, 0, 3, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+            &[4, 4, 4, 4, 4, 4, 4, 4, 3, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+            &[3, 3, 3, 3, 3, 3, 3, 4, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0],
+            &[3, 2, 3, 3, 3, 2, 3, 4, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1],
+            &[3, 2, 2, 2, 2, 2, 3, 4, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1],
+            &[3, 3, 3, 3, 3, 3, 3, 4, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+        ]),
+        90
+    );
 }
