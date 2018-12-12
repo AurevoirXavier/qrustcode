@@ -1,10 +1,9 @@
 #![feature(test)]
 
 extern crate encoding_rs;
-//extern crate image;
+extern crate image;
 #[macro_use]
 extern crate lazy_static;
-
 extern crate test;
 
 mod encoder;
@@ -33,11 +32,9 @@ mod tests {
     fn test() {
         use self::encoder::Encoder;
 
-        let mut encoder = Encoder::new()
-            .ec_level("M")
-            .encode("ハロー・ワールド")
-            .as_matrix();
+        let mut encoder = Encoder::new().ec_level("M");
+        let matrix = encoder.encode("ハロー・ワールド").as_matrix();
 
-//        println!("{:?}", );
+        println!("{:?}", matrix);
     }
 }

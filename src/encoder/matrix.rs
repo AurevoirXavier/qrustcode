@@ -5,8 +5,8 @@
 // 3 -> 1 function module
 // 4 -> 0 reserved module
 // 5 -> 0 unused module
+#[derive(Debug)]
 pub struct Matrix(Vec<Vec<u8>>);
-
 
 fn normalize_module(module: u8) -> u8 {
     match module {
@@ -283,8 +283,68 @@ impl Matrix {
         ((50 - percent_of_dark_modules).abs() as u32 / 5).min((55 - percent_of_dark_modules).abs() as u32 / 5) * 10
     }
 
-    fn data_mask(&mut self) -> &mut Matrix {
-        unimplemented!()
+    fn data_mask(&mut self) -> Matrix {
+        use std::{
+            sync::Arc,
+            thread,
+        };
+
+        fn mask_1(x: u8, y: u8) -> bool { (x as u16 + y as u16) % 2 == 0 }
+        fn mask_2(x: u8, _: u8) -> bool { x % 2 == 0 }
+        fn mask_3(_: u8, y: u8) -> bool { y % 3 == 0 }
+        fn mask_4(x: u8, y: u8) -> bool { (x as u16 + y as u16) % 3 == 0 }
+        fn mask_5(x: u8, y: u8) -> bool { ((x as f32 / 2.).floor() + (y as f32 / 2.).floor()) as u8 % 2 == 0 }
+        fn mask_6(x: u8, y: u8) -> bool { ((x as u16 * y as u16) % 2) + ((x as u16 * y as u16) % 3) == 0 }
+        fn mask_7(x: u8, y: u8) -> bool { (((x as u16 * y as u16) % 2) + ((x as u16 * y as u16) % 3)) % 2 == 0 }
+        fn mask_8(x: u8, y: u8) -> bool { (((x as u16 + y as u16) % 2) + ((x as u16 * y as u16) % 3)) % 2 == 0 }
+
+        let Matrix(matrix) = self;
+
+        let mut handlers = vec![];
+        for mask in [mask_1, mask_2, mask_3, mask_4, mask_5, mask_6, mask_7, mask_8].iter() {
+            let mut matrix = matrix.clone();
+            let handler = thread::spawn(move || {
+                let edge = matrix.len();
+                for y in 0..edge {
+                    for x in 0..edge {
+                        match matrix[y][x] {
+                            0 if mask(x as u8, y as u8) => matrix[y][x] = 1,
+                            1 if mask(x as u8, y as u8) => matrix[y][x] = 0,
+                            _ => continue,
+                        }
+                    }
+                }
+
+                let matrix = Arc::new(matrix);
+                let mut handlers = vec![];
+                for eval_condition in [
+                    Matrix::eval_condition_1,
+                    Matrix::eval_condition_2,
+                    Matrix::eval_condition_3,
+                    Matrix::eval_condition_4,
+                ].iter() {
+                    let matrix = Arc::clone(&matrix);
+                    let handler = thread::spawn(move || eval_condition(&matrix));
+
+                    handlers.push(handler)
+                }
+
+                (
+                    handlers.into_iter()
+                        .map(|handler| handler.join().unwrap())
+                        .sum::<u32>(),
+                    Matrix(Arc::try_unwrap(matrix).unwrap())
+                )
+            });
+
+            handlers.push(handler);
+        }
+
+        handlers.into_iter()
+            .map(|handler| handler.join().unwrap())
+            .min_by_key(|&(penalty, _)| penalty)
+            .unwrap()
+            .1
     }
 
     pub fn new(data: &Vec<u8>, version: usize) -> Matrix {
@@ -304,7 +364,9 @@ impl Matrix {
             .add_separators()
             .add_alignment_patterns(version)
             .add_timing_patterns()
-            .add_dark_module_and_reserved_areas(version);
+            .add_dark_module_and_reserved_areas(version)
+            .place_data(data)
+            .data_mask();
 
         matrix
     }
