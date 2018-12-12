@@ -268,6 +268,21 @@ impl Matrix {
         penalty
     }
 
+    fn eval_condition_4(matrix: &Vec<Vec<u8>>) -> u32 {
+        let percent_of_dark_modules = {
+            let mut dark_modules = 0;
+            for row in matrix {
+                for module in row {
+                    if module == &0 { dark_modules += 1; }
+                }
+            }
+
+            (dark_modules * 100) / (matrix.len() as i32).pow(2) * 5 / 5
+        };
+
+        ((50 - percent_of_dark_modules).abs() as u32 / 5).min((55 - percent_of_dark_modules).abs() as u32 / 5) * 10
+    }
+
     fn data_mask(&mut self) -> &mut Matrix {
         unimplemented!()
     }
@@ -745,5 +760,6 @@ fn test_eval_condition() {
 
     assert_eq!(Matrix::eval_condition_1(&matrix), 180);
     assert_eq!(Matrix::eval_condition_2(&matrix), 90);
-    assert_eq!(Matrix::eval_condition_3(&matrix), 80)
+    assert_eq!(Matrix::eval_condition_3(&matrix), 80);
+    assert_eq!(Matrix::eval_condition_4(&matrix), 0);
 }
