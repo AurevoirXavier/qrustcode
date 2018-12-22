@@ -25,8 +25,8 @@ impl Matrix {
                 for x in 0..7 {
                     matrix[x + i][y + j] = match x {
                         1 | 5 => match y {
-                            0 => 3,
-                            _ => 2,
+                            0 | 6 => 3,
+                            _ => 2
                         }
                         2...4 => match y {
                             1 | 5 => 2,
@@ -122,27 +122,6 @@ impl Matrix {
         let len = matrix.len();
         let fix = len - 8;
 
-        // reserved areas
-        for i in 0..9 {
-            // horizontal
-            matrix[8][i] = 4;
-            // vertical
-            matrix[i][8] = 4;
-        }
-
-        for i in fix..len {
-            // horizontal
-            matrix[8][i] = 4;
-            // vertical
-            matrix[i][8] = 4;
-        }
-
-        // avoid timing pattern
-        matrix[6][8] = 3;
-        matrix[8][6] = 3;
-        // avoid dark module
-        matrix[fix][8] = 3;
-
         if version > 6 {
             for i in fix - 3..fix {
                 for j in 0..6 {
@@ -152,7 +131,29 @@ impl Matrix {
                     matrix[j][i] = 4;
                 }
             }
+        } else {
+            // reserved areas
+            for i in 0..9 {
+                // horizontal
+                matrix[8][i] = 4;
+                // vertical
+                matrix[i][8] = 4;
+            }
+
+            for i in fix..len {
+                // horizontal
+                matrix[8][i] = 4;
+                // vertical
+                matrix[i][8] = 4;
+            }
+
+            // avoid timing pattern
+            matrix[6][8] = 3;
+            matrix[8][6] = 3;
         }
+
+        // add dark module
+        matrix[fix][8] = 3;
 
         self
     }
@@ -675,15 +676,15 @@ fn test_add_dark_module_and_reserved_areas() {
             .join("\n"),
         [
             "\
-            ■■■■■■■□○                         ○○○□■■■■■■■\n\
-            ■□□□□□■□○                         ○○○□■□□□□□■\n\
-            ■□■■■□■□○                         ○○○□■□■■■□■\n\
-            ■□■■■□■□○                         ○○○□■□■■■□■\n\
-            ■□■■■□■□○           ■■■■■         ○○○□■□■■■□■\n\
-            ■□□□□□■□○           ■□□□■         ○○○□■□□□□□■\n\
+            ■■■■■■■□                          ○○○□■■■■■■■\n\
+            ■□□□□□■□                          ○○○□■□□□□□■\n\
+            ■□■■■□■□                          ○○○□■□■■■□■\n\
+            ■□■■■□■□                          ○○○□■□■■■□■\n\
+            ■□■■■□■□            ■■■■■         ○○○□■□■■■□■\n\
+            ■□□□□□■□            ■□□□■         ○○○□■□□□□□■\n\
             ■■■■■■■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■■■■■■■\n\
-            □□□□□□□□○           ■□□□■            □□□□□□□□\n\
-            ○○○○○○■○○           ■■■■■            ○○○○○○○○\n",
+            □□□□□□□□            ■□□□■            □□□□□□□□\n",
+            "      ■             ■■■■■                    \n",
             "      □                                      \n",
             "      ■                                      \n",
             "      □                                      \n",
@@ -713,13 +714,13 @@ fn test_add_dark_module_and_reserved_areas() {
             "○○○○○○□                                      \n",
             "○○○○○○■             ■■■■■           ■■■■■    \n\
             □□□□□□□□■           ■□□□■           ■□□□■    \n\
-            ■■■■■■■□○           ■□■□■           ■□■□■    \n\
-            ■□□□□□■□○           ■□□□■           ■□□□■    \n\
-            ■□■■■□■□○           ■■■■■           ■■■■■    \n\
-            ■□■■■□■□○                                    \n\
-            ■□■■■□■□○                                    \n\
-            ■□□□□□■□○                                    \n\
-            ■■■■■■■□○                                    "
+            ■■■■■■■□            ■□■□■           ■□■□■    \n\
+            ■□□□□□■□            ■□□□■           ■□□□■    \n\
+            ■□■■■□■□            ■■■■■           ■■■■■    \n\
+            ■□■■■□■□                                     \n\
+            ■□■■■□■□                                     \n\
+            ■□□□□□■□                                     \n\
+            ■■■■■■■□                                     "
         ].join("")
             .to_string()
     );
