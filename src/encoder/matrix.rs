@@ -301,10 +301,10 @@ impl Matrix {
 
         let Matrix(matrix) = self;
 
-        let mut handlers = vec![];
+        let mut handles = vec![];
         for mask in [mask_1, mask_2, mask_3, mask_4, mask_5, mask_6, mask_7, mask_8].iter() {
             let mut matrix = matrix.clone();
-            let handler = thread::spawn(move || {
+            let handle = thread::spawn(move || {
                 let edge = matrix.len();
                 for y in 0..edge {
                     for x in 0..edge {
@@ -317,32 +317,30 @@ impl Matrix {
                 }
 
                 let matrix = Arc::new(matrix);
-                let mut handlers = vec![];
+                let mut handles = vec![];
                 for eval_condition in [
                     Matrix::eval_condition_1,
                     Matrix::eval_condition_2,
                     Matrix::eval_condition_3,
                     Matrix::eval_condition_4,
                 ].iter() {
-                    let matrix = Arc::clone(&matrix);
-                    let handler = thread::spawn(move || eval_condition(&matrix));
-
-                    handlers.push(handler)
+                    let matrix = Arc::clone(&matrix);;
+                    handles.push(thread::spawn(move || eval_condition(&matrix)))
                 }
 
                 (
-                    handlers.into_iter()
-                        .map(|handler| handler.join().unwrap())
+                    handles.into_iter()
+                        .map(|handle| handle.join().unwrap())
                         .sum::<u32>(),
                     Matrix(Arc::try_unwrap(matrix).unwrap())
                 )
             });
 
-            handlers.push(handler);
+            handles.push(handle);
         }
 
-        handlers.into_iter()
-            .map(|handler| handler.join().unwrap())
+        handles.into_iter()
+            .map(|handle| handle.join().unwrap())
             .min_by_key(|&(penalty, _)| penalty)
             .unwrap()
             .1
