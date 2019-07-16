@@ -324,7 +324,7 @@ impl Matrix {
                     Matrix::eval_condition_3,
                     Matrix::eval_condition_4,
                 ].iter() {
-                    let matrix = Arc::clone(&matrix);;
+                    let matrix = matrix.clone();
                     handles.push(thread::spawn(move || eval_condition(&matrix)))
                 }
 
@@ -365,9 +365,7 @@ impl Matrix {
             .add_timing_patterns()
             .add_dark_module_and_reserved_areas(version)
             .place_data(data)
-            .data_mask();
-
-        matrix
+            .data_mask()
     }
 }
 

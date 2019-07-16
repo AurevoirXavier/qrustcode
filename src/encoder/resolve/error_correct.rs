@@ -48,9 +48,7 @@ pub fn error_correct(mut data: Vec<u8>, ec_cw_per_block: u8) -> Vec<u8> {
             let coef = GF_LOG[coef as usize];
             for (x, &y) in data[i + 1..]
                 .iter_mut()
-                .zip(
-                    generator_polynomial.iter()
-                ) { *x ^= GF_EXP[y as usize + coef as usize]; }
+                .zip(generator_polynomial.iter()) { *x ^= GF_EXP[y as usize + coef as usize]; }
         }
     }
 

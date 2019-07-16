@@ -7,6 +7,7 @@ mod resolve;
 
 use self::mode::Mode;
 
+#[derive(Debug)]
 pub struct Encoder {
     data: Vec<u8>,
 

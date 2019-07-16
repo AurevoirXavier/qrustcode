@@ -9,7 +9,7 @@ impl Encoder {
 
         // reverse the order of Mode, we can pop() the most suitable mode at the end of the loop
         // modes[2] -> Byte mode(ISO 8859-1)
-        // Byte mode (UTF-8) should be modes[0], but ignore it
+        // Byte mode(UTF-8) should be modes[0], but ignore it
         let mut modes = vec![Chinese, Kanji, Byte, Alphanumeric, Numeric];
 
         // check every char
@@ -59,6 +59,7 @@ impl Encoder {
                 _ => panic!() // TODO
             };
 
+            // 1 - 9, 10 - 26, 27 - 40 versions have same indicator
             for (&(start, end), indicators) in [(0usize, 8usize), (9, 25), (26, 39)].iter().zip(INDICATORS.iter()) {
                 total_bits += indicators[self.mode.to_usize()] as u16;
 
@@ -72,14 +73,14 @@ impl Encoder {
                 }
             }
 
-            panic!()
+            unreachable!()
+        } else {
+            INDICATORS[match self.version {
+                0...8 => 0,
+                9...25 => 1,
+                26...39 => 2,
+                _ => panic!()
+            }][self.mode.to_usize()] as usize
         }
-
-        INDICATORS[match self.version {
-            0...8 => 0,
-            9...25 => 1,
-            26...39 => 2,
-            _ => panic!()
-        }][self.mode.to_usize()] as usize
     }
 }

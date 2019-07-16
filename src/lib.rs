@@ -1,7 +1,6 @@
 #![feature(test)]
 
 extern crate encoding_rs;
-extern crate image;
 #[macro_use]
 extern crate lazy_static;
 extern crate test;
@@ -18,10 +17,10 @@ mod tests {
         use self::encoder::Encoder;
         let mut encoder = Encoder::new()
             .mode("Kanji")
-            .version(2)
+            .version(3)
             .ec_level("M");
 
-        b.iter(|| (0..1).fold((), |_, _| {
+        b.iter(|| (0..100).fold((), |_, _| {
             encoder
                 .encode("ハロー・ワールド")
                 .as_matrix();

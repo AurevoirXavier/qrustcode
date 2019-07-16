@@ -21,7 +21,7 @@ impl Mode {
         }
     }
 
-    pub fn not_support(&self, c: char) -> bool {
+    pub fn  not_support(&self, c: char) -> bool {
         match self {
             Mode::Numeric => match c {
                 '0'...'9' => false,
@@ -29,8 +29,8 @@ impl Mode {
             }
             Mode::Alphanumeric => if super::qrcode_info::alphanumeric_table(c as u8) == 0 { true } else { false }
             Mode::Byte => match c as u8 {
-                0...255 => true,
-                _ => false
+                255 => false,
+                _ => true
             }
             Mode::Kanji => c < '\u{0800}' || c > '\u{4e00}',   // TODO range might not accurate
             Mode::Chinese => c < '\u{4e00}' || c > '\u{9fa5}', // TODO range might not accurate
